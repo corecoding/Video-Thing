@@ -145,6 +145,7 @@ class MergeWorker(QThread):
 class FileDropZone(QWidget):
     def __init__(self, file_type):
         super().__init__()
+        self.should_sort = True
         self.file_type = file_type.lower()
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -216,7 +217,8 @@ class FileDropZone(QWidget):
                 self.list_widget.addItem(os.path.basename(file))
 
         # Call sort_items after adding new files
-        self.sort_items()
+        if self.should_sort:
+            self.sort_items()
 
     def list_widget_clicked(self, event):
         if self.list_widget.count() == 0:
@@ -234,6 +236,7 @@ class FileDropZone(QWidget):
     def move_item_up(self):
         current_row = self.list_widget.currentRow()
         if current_row > 0:
+            self.should_sort = False
             item = self.list_widget.takeItem(current_row)
             self.list_widget.insertItem(current_row - 1, item)
             self.list_widget.setCurrentRow(current_row - 1)
@@ -243,6 +246,7 @@ class FileDropZone(QWidget):
     def move_item_down(self):
         current_row = self.list_widget.currentRow()
         if current_row < self.list_widget.count() - 1:
+            self.should_sort = False
             item = self.list_widget.takeItem(current_row)
             self.list_widget.insertItem(current_row + 1, item)
             self.list_widget.setCurrentRow(current_row + 1)
