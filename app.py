@@ -215,6 +215,9 @@ class FileDropZone(QWidget):
                 self.filepaths.append(file)
                 self.list_widget.addItem(os.path.basename(file))
 
+        # Call sort_items after adding new files
+        self.sort_items()
+
     def list_widget_clicked(self, event):
         if self.list_widget.count() == 0:
             self.browse_files()
