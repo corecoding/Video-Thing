@@ -7,20 +7,6 @@ import os
 import pkg_resources
 import multiprocessing
 
-required_packages = {
-    'PyQt6': 'PyQt6',
-}
-
-def install_missing_packages():
-    installed_packages = {pkg.key for pkg in pkg_resources.working_set}
-    missing_packages = [pkg for pkg_key, pkg in required_packages.items()
-                        if pkg_key not in installed_packages]
-
-    if missing_packages:
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', *missing_packages])
-
-install_missing_packages()
-
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QPushButton, QMessageBox, QListWidget,
                              QHBoxLayout, QProgressBar, QLabel, QFileDialog)
@@ -39,14 +25,14 @@ class MergeWorker(QThread):
 
     def run(self):
         try:
-            self.progress.emit(2)
+            self.progress.emit(1)
             if self.is_cancelled:
                 return
 
             # Step 1: Merge audio files
-            merged_audio = "merged_audio.mp3"
+            merged_audio = self.get_temp_path("merged_audio.mp3")
             self.merge_audio_files(merged_audio)
-            self.progress.emit(10)
+            self.progress.emit(5)
 
             if self.is_cancelled:
                 return
@@ -63,16 +49,38 @@ class MergeWorker(QThread):
             if os.path.exists(merged_audio):
                 os.remove(merged_audio)
 
+    def get_binary_path(self, relative_path = ''):
+        # Check if the application is running as a bundled executable
+        if getattr(sys, 'frozen', False):
+            # If so, use sys._MEIPASS to get the base path
+            base_path = sys._MEIPASS
+        else:
+            # If running as a regular Python script, use the script's directory
+            base_path = os.path.dirname(os.path.abspath(__file__))
+
+        # Combine the base path with the relative path to get the full path
+        return os.path.join(base_path, relative_path)
+
+    def get_temp_path(self, relative_path=''):
+        return os.path.join('/tmp', relative_path)
+
     def merge_audio_files(self, output_audio):
-        with open("files.txt", "w") as f:
+        files_path = self.get_temp_path('files.txt')
+        with open(files_path, "w") as f:
             for audio_path in self.audio_paths:
                 f.write(f"file '{audio_path}'\n")
 
+        # Get the path to the embedded ffmpeg binary
+        ffmpeg_path = self.get_binary_path("ffmpeg")
+
+        # Make sure ffmpeg is executable
+        os.chmod(ffmpeg_path, 0o755)
+
         cmd = [
-            "ffmpeg",
+            ffmpeg_path,
             "-f", "concat",
             "-safe", "0",
-            "-i", "files.txt",
+            "-i", files_path,
             "-c", "copy",
             "-y",
             output_audio
@@ -83,18 +91,22 @@ class MergeWorker(QThread):
             if self.is_cancelled:
                 process.terminate()
                 return
-            # Update progress (you might need to adjust this based on FFmpeg output)
-            self.progress.emit(10)  # Placeholder progress update
 
         process.wait()
-        os.remove("files.txt")
+        os.remove(files_path)
 
     def create_final_video(self, merged_audio):
         num_cores = multiprocessing.cpu_count()
         num_threads = max(2, num_cores - 1)  # Use all cores except one
 
+        # Get the path to the embedded ffmpeg binary
+        ffmpeg_path = self.get_binary_path("ffmpeg")
+
+        # Make sure ffmpeg is executable
+        os.chmod(ffmpeg_path, 0o755)
+
         cmd = [
-            "ffmpeg",
+            ffmpeg_path,
             "-stats",
             "-i", self.video_paths[0],  # Intro video (plays once)
             "-stream_loop", "-1",
@@ -123,21 +135,32 @@ class MergeWorker(QThread):
                 time = line.split("time=")[1].split()[0]
                 hours, minutes, seconds = time.split(':')
                 current_time = int(hours) * 3600 + int(minutes) * 60 + float(seconds)
-                progress = int((current_time / duration) * 90) + 10  # Scale from 10% to 100%
+                progress = int((current_time / duration) * 95) + 5  # Scale from 5% to 100%
                 self.progress.emit(progress)
 
         process.wait()
 
     def get_video_duration(self, video_path):
+        ffprobe_path = self.get_binary_path("ffprobe")
+        os.chmod(ffprobe_path, 0o755)
         cmd = [
-            "ffprobe",
+            ffprobe_path,
             "-v", "error",
             "-show_entries", "format=duration",
             "-of", "default=noprint_wrappers=1:nokey=1",
             video_path
         ]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-        return float(result.stdout)
+
+        try:
+            duration = float(result.stdout.strip())
+            if duration <= 0:
+                raise ValueError("Invalid duration")
+            return duration
+        except (ValueError, TypeError):
+            print(f"Error getting duration. ffprobe output: {result.stdout}")
+            print(f"ffprobe error: {result.stderr}")
+            raise RuntimeError("Failed to get video duration")
 
     def cancel(self):
         self.is_cancelled = True
@@ -289,7 +312,7 @@ class FileDropZone(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Super Audio Book Maker 3000 Premium Limited Edition")
+        self.setWindowTitle("Video Thing")
         self.setMinimumSize(500, 400)
 
         central_widget = QWidget()
@@ -301,6 +324,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(video_label)
 
         self.video_zone = FileDropZone("mp4")
+        #self.video_zone.setFixedHeight(100)  # Set a fixed height for the video zone
         layout.addWidget(self.video_zone)
 
         audio_label = QLabel("Audio files...")
@@ -402,7 +426,7 @@ class MainWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    app.setApplicationName("Super ")  # Set the application name
+    app.setApplicationName("Video Thing")  # Set the application name
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

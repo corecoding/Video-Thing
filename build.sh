@@ -1,18 +1,17 @@
 #!/bin/bash
 
-rm -rf Video Thing.app/
+rm -rf Video\ Thing.app/
+rm Video\ Thing.spec
 
 pip3 install PyQt6
 
 if [ ! -f ./ffmpeg ]; then
-  #curl -JL -o ffmpeg.zip https://evermeet.cx/ffmpeg/get/zip
   curl -JL -o ffmpeg.zip https://evermeet.cx/ffmpeg/getrelease/zip
   unzip ffmpeg.zip
   rm ffmpeg.zip
 fi
 
 if [ ! -f ./ffprobe ]; then
-  #curl -JL -o ffprobe.zip https://evermeet.cx/ffprobe/get/zip
   curl -JL -o ffprobe.zip https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip
   unzip ffprobe.zip
   rm ffprobe.zip
@@ -22,13 +21,13 @@ PATH='/Users/cmonahan/Library/Application Support/Herd/bin/:/Users/cmonahan/Libr
 
 pyinstaller --hidden-import PyQt6 --hidden-import PyQt6.QtCore --hidden-import PyQt6.QtGui --hidden-import PyQt6.QtWidgets --clean --windowed --name "Video Thing" --add-data="./ffmpeg:." --add-data="./ffprobe:." ./app.py
 
-if [ -f ./ffmpeg ]; then
-  rm ffmpeg
-fi
+#if [ -f ./ffmpeg ]; then
+  #rm ffmpeg
+#fi
 
-if [ -f ./ffprobe ]; then
-  rm ffprobe
-fi
+#if [ -f ./ffprobe ]; then
+  #rm ffprobe
+#fi
 
 mv dist/Video\ Thing.app .
 
