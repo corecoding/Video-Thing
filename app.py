@@ -401,6 +401,11 @@ class MainWindow(QMainWindow):
             if not output_path:
                 return  # User cancelled the file dialog
 
+            # Check if the destination is writable
+            if not self.is_path_writable(output_path):
+                QMessageBox.critical(self, "Error", f"Cannot write to the selected destination: {output_path}\nPlease choose a different location.")
+                return
+
             self.merge_button.setText("Abort")
             self.set_button_style(is_abort=True)
             self.progress_bar.setVisible(True)
@@ -410,6 +415,24 @@ class MainWindow(QMainWindow):
             self.merge_worker.progress.connect(self.update_progress)
             self.merge_worker.finished.connect(self.handle_merge_finished)
             self.merge_worker.start()
+
+    def is_path_writable(self, path):
+        # Check if the directory is writable
+        directory = os.path.dirname(path)
+        if not os.access(directory, os.W_OK):
+            return False
+
+        # If the file already exists, check if it's writable
+        if os.path.exists(path):
+            return os.access(path, os.W_OK)
+
+        # If the file doesn't exist, try creating a temporary file
+        try:
+            testfile = tempfile.NamedTemporaryFile(dir=directory, delete=True)
+            testfile.close()
+            return True
+        except (OSError, IOError):
+            return False
 
     def update_progress(self, value):
         self.progress_bar.setValue(value)
