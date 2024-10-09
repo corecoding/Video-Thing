@@ -6,6 +6,7 @@ import subprocess
 import os
 import pkg_resources
 import multiprocessing
+import tempfile
 
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QPushButton, QMessageBox, QListWidget,
