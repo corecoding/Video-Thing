@@ -51,54 +51,39 @@ cat > "$RESOURCES_DIR/first_run.sh" << 'EOF'
 # Get absolute path to the script directory
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Log file for debugging
-LOG_FILE="/tmp/videothing_first_run.log"
-echo "Starting first_run.sh in $DIR" > "$LOG_FILE"
-
 # Check if this is the first run
 FIRST_RUN_FLAG="$DIR/.installed"
 if [ ! -f "$FIRST_RUN_FLAG" ]; then
-    echo "First run - checking dependencies..." | tee -a "$LOG_FILE"
-    
-    # Check the system architecture
-    ARCH=$(uname -m)
-    echo "System architecture: $ARCH" | tee -a "$LOG_FILE"
-    
     # Create a temporary Python virtual environment for the right architecture
-    echo "Creating temporary virtual environment..." | tee -a "$LOG_FILE"
     TEMP_ENV_DIR="$DIR/venv"
-    
+
     # Remove any existing environment
     if [ -d "$TEMP_ENV_DIR" ]; then
         rm -rf "$TEMP_ENV_DIR"
     fi
-    
+
     # Create a fresh environment
     python3 -m venv "$TEMP_ENV_DIR"
 
     "$TEMP_ENV_DIR/bin/pip" install --upgrade pip
-    
+
     # Install PyQt6 inside this environment
-    echo "Installing PyQt6 in virtual environment..." | tee -a "$LOG_FILE"
-    "$TEMP_ENV_DIR/bin/pip" install PyQt6 | tee -a "$LOG_FILE"
-    
+    "$TEMP_ENV_DIR/bin/pip" install PyQt6
+
     # Create flag file to indicate we've run the setup
     touch "$FIRST_RUN_FLAG"
 fi
 
 # Use the virtual environment if it exists
 if [ -d "$DIR/venv" ]; then
-    echo "Using virtual environment for Python..." | tee -a "$LOG_FILE"
     PYTHON_EXE="$DIR/venv/bin/python3"
 else
-    echo "Using system Python..." | tee -a "$LOG_FILE"
     PYTHON_EXE="python3"
 fi
 
 # Now run the actual app
-echo "Starting the application with $PYTHON_EXE $DIR/app.py" | tee -a "$LOG_FILE"
 cd "$DIR"
-"$PYTHON_EXE" "$DIR/app.py" 2>&1 | tee -a "$LOG_FILE"
+"$PYTHON_EXE" "$DIR/app.py"
 EOF
 
 chmod +x "$RESOURCES_DIR/first_run.sh"
@@ -107,71 +92,47 @@ chmod +x "$RESOURCES_DIR/first_run.sh"
 cat > "$MACOS_DIR/$APP_NAME" << 'EOF'
 #!/bin/bash
 
-# Log file for debugging
-LOG_FILE="/tmp/videothing_launcher.log"
-echo "Starting Video Thing launcher..." > "$LOG_FILE"
-
 # Get absolute path to the executable directory
 SELF_PATH=$(cd -P -- "$(dirname -- "$0")" && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
 DIR=$(dirname "$SELF_PATH")
-echo "Executable path: $SELF_PATH" >> "$LOG_FILE"
-echo "Directory: $DIR" >> "$LOG_FILE"
 
 # Get absolute path to Resources
 RESOURCES_DIR="$DIR/../Resources"
 if [ -d "$RESOURCES_DIR" ]; then
     RESOURCES_DIR=$(cd "$RESOURCES_DIR" 2>/dev/null && pwd)
-    echo "Resources directory: $RESOURCES_DIR" >> "$LOG_FILE"
 else
-    echo "ERROR: Resources directory not found at $RESOURCES_DIR" >> "$LOG_FILE"
     # Try a fallback approach
     RESOURCES_DIR="$(dirname "$DIR")/Resources"
     if [ -d "$RESOURCES_DIR" ]; then
         RESOURCES_DIR=$(cd "$RESOURCES_DIR" 2>/dev/null && pwd)
-        echo "Resources directory (fallback): $RESOURCES_DIR" >> "$LOG_FILE"
     else
-        echo "ERROR: Resources directory not found at fallback location either" >> "$LOG_FILE"
+        echo "ERROR: Resources directory not found"
         exit 1
     fi
 fi
 
-# List the contents of the Resources directory
-echo "Contents of Resources directory:" >> "$LOG_FILE"
-ls -la "$RESOURCES_DIR" >> "$LOG_FILE"
-
 # Executable permissions
-echo "Setting executable permissions..." >> "$LOG_FILE"
 if [ -f "$RESOURCES_DIR/ffmpeg" ]; then
     chmod +x "$RESOURCES_DIR/ffmpeg"
-    echo "Made ffmpeg executable" >> "$LOG_FILE"
 fi
 if [ -f "$RESOURCES_DIR/ffprobe" ]; then
     chmod +x "$RESOURCES_DIR/ffprobe"
-    echo "Made ffprobe executable" >> "$LOG_FILE"
 fi
 if [ -f "$RESOURCES_DIR/first_run.sh" ]; then
     chmod +x "$RESOURCES_DIR/first_run.sh"
-    echo "Made first_run.sh executable" >> "$LOG_FILE"
 else
-    echo "ERROR: first_run.sh not found in Resources directory" >> "$LOG_FILE"
+    echo "ERROR: first_run.sh not found in Resources directory"
     exit 1
 fi
-
-# Print environment variables for debugging
-echo "Environment variables:" >> "$LOG_FILE"
-env >> "$LOG_FILE"
 
 # Run the app
-echo "Running first_run.sh..." >> "$LOG_FILE"
-"$RESOURCES_DIR/first_run.sh" 2>&1 | tee -a "$LOG_FILE"
+"$RESOURCES_DIR/first_run.sh"
 
 # If we get here, check if there was an error
-if [ ${PIPESTATUS[0]} -ne 0 ]; then
-    echo "Error occurred while running first_run.sh" >> "$LOG_FILE"
+if [ $? -ne 0 ]; then
+    echo "Error occurred while running first_run.sh"
     exit 1
 fi
-
-echo "Launcher script completed successfully" >> "$LOG_FILE"
 EOF
 
 chmod +x "$MACOS_DIR/$APP_NAME"
@@ -232,11 +193,6 @@ Requirements:
 - Python 3.6 or higher
 - pip (which comes with Python)
 - Python's venv module (should come with Python)
-
-Troubleshooting:
-If the app doesn't start, check the log files at:
-/tmp/videothing_launcher.log
-/tmp/videothing_first_run.log
 EOF
 
 # Clean up temp files
