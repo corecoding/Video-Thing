@@ -5,47 +5,26 @@ import sys
 import subprocess
 import os
 import tempfile
-import importlib.util
-
-# Function to check if a module is installed
-def is_module_installed(module_name):
-    return importlib.util.find_spec(module_name) is not None
-
-# Function to install a module if it's not already installed
-def ensure_module_installed(module_name):
-    if not is_module_installed(module_name):
-        print(f"Installing required module: {module_name}")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", module_name])
-        print(f"Successfully installed {module_name}")
-
-# Check and install required packages
-required_modules = ["setuptools", "PyQt6", "pkg_resources", "multiprocessing"]
-for module in required_modules:
-    try:
-        ensure_module_installed(module)
-    except Exception as e:
-        print(f"Error installing {module}: {e}")
-        # Continue anyway - the import might work if the module is available in a different way
 
 # Now import the required modules
 try:
     import pkg_resources
     import multiprocessing
     from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
-                                QPushButton, QMessageBox, QListWidget,
-                                QHBoxLayout, QProgressBar, QLabel, QFileDialog)
+                               QPushButton, QMessageBox, QListWidget,
+                               QHBoxLayout, QProgressBar, QLabel, QFileDialog)
     from PyQt6.QtCore import Qt, QThread, pyqtSignal
 except ImportError as e:
     print(f"Error importing modules: {e}")
     # Show error message in GUI if possible, otherwise use console
     try:
         app = QApplication(sys.argv)
-        QMessageBox.critical(None, "Error", f"Failed to load required modules: {e}\n\nPlease install PyQt6 manually: pip install PyQt6")
+        QMessageBox.critical(None, "Error", f"Failed to load required modules: {e}\n\nPlease ensure PyQt6 is installed correctly.")
         sys.exit(1)
     except:
         print("Could not initialize QApplication to show error message.")
-        print("Please install required modules manually:")
-        print("pip install setuptools PyQt6")
+        print("Please ensure required modules are installed correctly:")
+        print("This application requires: PyQt6, setuptools")
         sys.exit(1)
 
 class MergeWorker(QThread):
@@ -397,7 +376,6 @@ class MainWindow(QMainWindow):
         layout.addWidget(video_label)
 
         self.video_zone = FileDropZone("mp4")
-        #self.video_zone.setFixedHeight(100)  # Set a fixed height for the video zone
         layout.addWidget(self.video_zone)
 
         audio_label = QLabel("Audio files...")

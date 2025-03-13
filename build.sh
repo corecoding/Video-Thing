@@ -67,8 +67,8 @@ if [ ! -f "$FIRST_RUN_FLAG" ]; then
 
     "$TEMP_ENV_DIR/bin/pip" install --upgrade pip
 
-    # Install PyQt6 inside this environment
-    "$TEMP_ENV_DIR/bin/pip" install PyQt6
+    # Install required packages
+    "$TEMP_ENV_DIR/bin/pip" install PyQt6 setuptools
 
     # Create flag file to indicate we've run the setup
     touch "$FIRST_RUN_FLAG"
