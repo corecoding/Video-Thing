@@ -195,7 +195,7 @@ if [ -f "$DMG_TEMP" ]; then
 fi
 
 # Create a DMG directly from the app folder
-hdiutil create -volname "$DMG_VOLUME" -srcfolder "$APP_DIR" -ov -format UDZO "$DMG_NAME"
+hdiutil create -volname "$DMG_VOLUME" -srcfolder "$APP_DIR" -ov -format UDZO "dist/$DMG_NAME"
 
-echo "DMG created: $DMG_NAME"
+echo "DMG created: dist/$DMG_NAME"
 echo "Distribution complete!"
