@@ -45,11 +45,38 @@ if [ -f "$ICON_NAME" ]; then
     cp "$ICON_NAME" "$RESOURCES_DIR/"
 fi
 
-# Create improved first-run script that handles architecture compatibility
-cat > "$RESOURCES_DIR/first_run.sh" << 'EOF'
+# main launcher that handles architecture compatibility
+cat > "$MACOS_DIR/$APP_NAME" << 'EOF'
 #!/bin/bash
-# Get absolute path to the script directory
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Get absolute path to the executable directory
+SELF_PATH=$(cd -P -- "$(dirname -- "$0")" && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
+DIR=$(dirname "$SELF_PATH")
+
+# Get absolute path to Resources
+RESOURCES_DIR="$DIR/../Resources"
+if [ -d "$RESOURCES_DIR" ]; then
+    RESOURCES_DIR=$(cd "$RESOURCES_DIR" 2>/dev/null && pwd)
+else
+    # Try a fallback approach
+    RESOURCES_DIR="$(dirname "$DIR")/Resources"
+    if [ -d "$RESOURCES_DIR" ]; then
+        RESOURCES_DIR=$(cd "$RESOURCES_DIR" 2>/dev/null && pwd)
+    else
+        echo "ERROR: Resources directory not found"
+        exit 1
+    fi
+fi
+
+# Executable permissions
+if [ -f "$RESOURCES_DIR/ffmpeg" ]; then
+    chmod +x "$RESOURCES_DIR/ffmpeg"
+fi
+if [ -f "$RESOURCES_DIR/ffprobe" ]; then
+    chmod +x "$RESOURCES_DIR/ffprobe"
+fi
+
+# Run the app
 
 # Check if this is the first run
 FIRST_RUN_FLAG="$DIR/.installed"
@@ -83,56 +110,7 @@ fi
 
 # Now run the actual app
 cd "$DIR"
-"$PYTHON_EXE" "$DIR/app.py"
-EOF
-
-chmod +x "$RESOURCES_DIR/first_run.sh"
-
-# Update the main launcher to use the first-run script
-cat > "$MACOS_DIR/$APP_NAME" << 'EOF'
-#!/bin/bash
-
-# Get absolute path to the executable directory
-SELF_PATH=$(cd -P -- "$(dirname -- "$0")" && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
-DIR=$(dirname "$SELF_PATH")
-
-# Get absolute path to Resources
-RESOURCES_DIR="$DIR/../Resources"
-if [ -d "$RESOURCES_DIR" ]; then
-    RESOURCES_DIR=$(cd "$RESOURCES_DIR" 2>/dev/null && pwd)
-else
-    # Try a fallback approach
-    RESOURCES_DIR="$(dirname "$DIR")/Resources"
-    if [ -d "$RESOURCES_DIR" ]; then
-        RESOURCES_DIR=$(cd "$RESOURCES_DIR" 2>/dev/null && pwd)
-    else
-        echo "ERROR: Resources directory not found"
-        exit 1
-    fi
-fi
-
-# Executable permissions
-if [ -f "$RESOURCES_DIR/ffmpeg" ]; then
-    chmod +x "$RESOURCES_DIR/ffmpeg"
-fi
-if [ -f "$RESOURCES_DIR/ffprobe" ]; then
-    chmod +x "$RESOURCES_DIR/ffprobe"
-fi
-if [ -f "$RESOURCES_DIR/first_run.sh" ]; then
-    chmod +x "$RESOURCES_DIR/first_run.sh"
-else
-    echo "ERROR: first_run.sh not found in Resources directory"
-    exit 1
-fi
-
-# Run the app
-"$RESOURCES_DIR/first_run.sh"
-
-# If we get here, check if there was an error
-if [ $? -ne 0 ]; then
-    echo "Error occurred while running first_run.sh"
-    exit 1
-fi
+"$PYTHON_EXE" "$RESOURCES_DIR/app.py"
 EOF
 
 chmod +x "$MACOS_DIR/$APP_NAME"
