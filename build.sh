@@ -25,19 +25,6 @@ mkdir -p "$TEMP_DIR" "$(dirname "$APP_DIR")"
 echo "Creating app bundle structure..."
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR"
 
-# Download ffmpeg and ffprobe for Intel
-echo "Downloading ffmpeg and ffprobe..."
-curl -L "https://evermeet.cx/ffmpeg/ffmpeg-5.1.2.zip" -o "$TEMP_DIR/ffmpeg.zip"
-curl -L "https://evermeet.cx/ffmpeg/ffprobe-5.1.2.zip" -o "$TEMP_DIR/ffprobe.zip"
-
-echo "Extracting ffmpeg and ffprobe..."
-unzip -o "$TEMP_DIR/ffmpeg.zip" -d "$TEMP_DIR"
-unzip -o "$TEMP_DIR/ffprobe.zip" -d "$TEMP_DIR"
-
-# Copy ffmpeg and ffprobe
-cp "$TEMP_DIR/ffmpeg" "$TEMP_DIR/ffprobe" "$RESOURCES_DIR/"
-chmod +x "$RESOURCES_DIR/ffmpeg" "$RESOURCES_DIR/ffprobe"
-
 # Copy app resources
 echo "Copying application resources..."
 cp "$SCRIPT_NAME" "$RESOURCES_DIR/"
@@ -68,12 +55,22 @@ else
     fi
 fi
 
-# Executable permissions
-if [ -f "$RESOURCES_DIR/ffmpeg" ]; then
-    chmod +x "$RESOURCES_DIR/ffmpeg"
+# Download ffmpeg if not present (for current architecture)
+if [ ! -f "$RESOURCES_DIR/ffmpeg" ]; then
+  echo "Downloading ffmpeg..."
+  curl -JL -o "$RESOURCES_DIR/ffmpeg.zip" https://evermeet.cx/ffmpeg/getrelease/zip
+  unzip "$RESOURCES_DIR/ffmpeg.zip" -d "$RESOURCES_DIR"
+  rm "$RESOURCES_DIR/ffmpeg.zip"
+  chmod +x "$RESOURCES_DIR/ffmpeg"
 fi
-if [ -f "$RESOURCES_DIR/ffprobe" ]; then
-    chmod +x "$RESOURCES_DIR/ffprobe"
+
+# Download ffprobe if not present (for current architecture)
+if [ ! -f "$RESOURCES_DIR/ffprobe" ]; then
+  echo "Downloading ffprobe..."
+  curl -JL -o "/tmp/ffprobe.zip" https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip
+  unzip "/tmp/ffprobe.zip" -d "$RESOURCES_DIR"
+  rm "/tmp/ffprobe.zip"
+  chmod +x "$RESOURCES_DIR/ffprobe"
 fi
 
 # Run the app
