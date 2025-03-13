@@ -4,14 +4,49 @@ import re
 import sys
 import subprocess
 import os
-import pkg_resources
-import multiprocessing
 import tempfile
+import importlib.util
 
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
-                             QPushButton, QMessageBox, QListWidget,
-                             QHBoxLayout, QProgressBar, QLabel, QFileDialog)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+# Function to check if a module is installed
+def is_module_installed(module_name):
+    return importlib.util.find_spec(module_name) is not None
+
+# Function to install a module if it's not already installed
+def ensure_module_installed(module_name):
+    if not is_module_installed(module_name):
+        print(f"Installing required module: {module_name}")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", module_name])
+        print(f"Successfully installed {module_name}")
+
+# Check and install required packages
+required_modules = ["setuptools", "PyQt6", "pkg_resources", "multiprocessing"]
+for module in required_modules:
+    try:
+        ensure_module_installed(module)
+    except Exception as e:
+        print(f"Error installing {module}: {e}")
+        # Continue anyway - the import might work if the module is available in a different way
+
+# Now import the required modules
+try:
+    import pkg_resources
+    import multiprocessing
+    from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+                                QPushButton, QMessageBox, QListWidget,
+                                QHBoxLayout, QProgressBar, QLabel, QFileDialog)
+    from PyQt6.QtCore import Qt, QThread, pyqtSignal
+except ImportError as e:
+    print(f"Error importing modules: {e}")
+    # Show error message in GUI if possible, otherwise use console
+    try:
+        app = QApplication(sys.argv)
+        QMessageBox.critical(None, "Error", f"Failed to load required modules: {e}\n\nPlease install PyQt6 manually: pip install PyQt6")
+        sys.exit(1)
+    except:
+        print("Could not initialize QApplication to show error message.")
+        print("Please install required modules manually:")
+        print("pip install setuptools PyQt6")
+        sys.exit(1)
 
 class MergeWorker(QThread):
     progress = pyqtSignal(int)
@@ -50,20 +85,35 @@ class MergeWorker(QThread):
             if os.path.exists(merged_audio):
                 os.remove(merged_audio)
 
-    def get_binary_path(self, relative_path = ''):
-        # Check if the application is running as a bundled executable
-        if getattr(sys, 'frozen', False):
-            # If so, use sys._MEIPASS to get the base path
-            base_path = sys._MEIPASS
-        else:
-            # If running as a regular Python script, use the script's directory
-            base_path = os.path.dirname(os.path.abspath(__file__))
+    def get_binary_path(self, binary_name):
+        """Find the path to a bundled binary (ffmpeg or ffprobe)."""
+        # py2app specific - check if running as a bundled .app
+        if hasattr(sys, "frozen") and sys.frozen:
+            # Get the Resources directory in the app bundle
+            if getattr(sys, 'frozen', False) and getattr(sys, '_MEIPASS', False):
+                # PyInstaller case (fallback)
+                base_path = sys._MEIPASS
+            else:
+                # py2app case - use the resource path of the .app bundle
+                base_path = os.path.join(os.path.dirname(os.path.dirname(sys.executable)), 'Resources')
 
-        # Combine the base path with the relative path to get the full path
-        return os.path.join(base_path, relative_path)
+            # Return the full path to the binary
+            binary_path = os.path.join(base_path, binary_name)
+            if os.path.exists(binary_path):
+                return binary_path
+
+        # Fallback - look for the binary in the current directory
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        binary_path = os.path.join(current_dir, binary_name)
+        if os.path.exists(binary_path):
+            return binary_path
+
+        # Final fallback - assume it's in the PATH
+        return binary_name
 
     def get_temp_path(self, relative_path=''):
-        return os.path.join('/tmp', relative_path)
+        temp_dir = tempfile.gettempdir()
+        return os.path.join(temp_dir, relative_path)
 
     def merge_audio_files(self, output_audio):
         files_path = self.get_temp_path('files.txt')
@@ -74,8 +124,13 @@ class MergeWorker(QThread):
         # Get the path to the embedded ffmpeg binary
         ffmpeg_path = self.get_binary_path("ffmpeg")
 
-        # Make sure ffmpeg is executable
-        os.chmod(ffmpeg_path, 0o755)
+        # Make sure ffmpeg is executable (if it's a file that we can access)
+        if os.path.isfile(ffmpeg_path):
+            try:
+                os.chmod(ffmpeg_path, 0o755)
+            except OSError:
+                # If we can't chmod, it's probably already executable or we don't have permission
+                pass
 
         cmd = [
             ffmpeg_path,
@@ -97,14 +152,23 @@ class MergeWorker(QThread):
         os.remove(files_path)
 
     def create_final_video(self, merged_audio):
-        num_cores = multiprocessing.cpu_count()
-        num_threads = max(2, num_cores - 1)  # Use all cores except one
+        # Get CPU count safely (multiprocessing might not be available)
+        try:
+            num_cores = multiprocessing.cpu_count()
+            num_threads = max(2, num_cores - 1)  # Use all cores except one
+        except:
+            num_threads = 2  # Fallback to a reasonable default
 
         # Get the path to the embedded ffmpeg binary
         ffmpeg_path = self.get_binary_path("ffmpeg")
 
-        # Make sure ffmpeg is executable
-        os.chmod(ffmpeg_path, 0o755)
+        # Make sure ffmpeg is executable (if it's a file that we can access)
+        if os.path.isfile(ffmpeg_path):
+            try:
+                os.chmod(ffmpeg_path, 0o755)
+            except OSError:
+                # If we can't chmod, it's probably already executable or we don't have permission
+                pass
 
         cmd = [
             ffmpeg_path,
@@ -143,7 +207,13 @@ class MergeWorker(QThread):
 
     def get_video_duration(self, video_path):
         ffprobe_path = self.get_binary_path("ffprobe")
-        os.chmod(ffprobe_path, 0o755)
+        if os.path.isfile(ffprobe_path):
+            try:
+                os.chmod(ffprobe_path, 0o755)
+            except OSError:
+                # If we can't chmod, it's probably already executable or we don't have permission
+                pass
+
         cmd = [
             ffprobe_path,
             "-v", "error",
@@ -251,7 +321,9 @@ class FileDropZone(QWidget):
 
     def browse_files(self):
         file_dialog = QFileDialog()
-        files, _ = file_dialog.getOpenFileNames(self, f"Select {self.file_type.upper()} Files", "", f"{self.file_type.upper()} Files (*.{self.file_type})")
+        # Get user's Documents directory
+        documents_dir = os.path.expanduser("~/Documents")
+        files, _ = file_dialog.getOpenFileNames(self, f"Select {self.file_type.upper()} Files", documents_dir, f"{self.file_type.upper()} Files (*.{self.file_type})")
         for file in files:
             if file not in self.filepaths:
                 self.filepaths.append(file)
@@ -398,7 +470,9 @@ class MainWindow(QMainWindow):
                 return
 
             # Open file dialog to select output destination
-            output_path, _ = QFileDialog.getSaveFileName(self, "Save Video As", "youtube.mp4", "MP4 Files (*.mp4)")
+            documents_dir = os.path.expanduser("~/Documents")
+            default_file = os.path.join(documents_dir, "youtube.mp4")
+            output_path, _ = QFileDialog.getSaveFileName(self, "Save Video As", default_file, "MP4 Files (*.mp4)")
             if not output_path:
                 return  # User cancelled the file dialog
 
