@@ -18,7 +18,6 @@ jobs:
       APP_IDENTIFIER: "com.yourdomain.videothing"
       APP_VERSION: "1.0.0"
       SCRIPT_NAME: "app.py"
-      ICON_NAME: "icon.icns"
 
     steps:
     - uses: actions/checkout@v3
@@ -45,26 +44,21 @@ jobs:
       run: |
         echo "MACOS_DIR=$CONTENTS_DIR/MacOS" >> $GITHUB_ENV
 
-    - name: Cleanup env
+    - name: Assemble app bundle
       run: |
-        FRAMEWORKS_DIR="$CONTENTS_DIR/Frameworks"
-        RESOURCES_DIR="$CONTENTS_DIR/Resources"
-
         # Clean previous builds
         echo "Cleaning previous builds..."
-        rm -rf "$APP_DIR"
-        mkdir -p "$(dirname "$APP_DIR")"
+        #rm -rf "$APP_DIR"
+        #mkdir -p "$(dirname "$APP_DIR")"
+        cp -R template "$APP_DIR"
 
         # Create app directory structure
         echo "Creating app bundle structure..."
-        mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR"
+        mkdir -p "$MACOS_DIR" "$CONTENTS_DIR/Frameworks"
 
         # Copy app resources
         echo "Copying application resources..."
-        cp "$SCRIPT_NAME" "$RESOURCES_DIR/"
-        if [ -f "$ICON_NAME" ]; then
-            cp "$ICON_NAME" "$RESOURCES_DIR/"
-        fi
+        cp "$SCRIPT_NAME" "$CONTENTS_DIR/Resources/"
 
     - name: Create main launcher
       run: |
@@ -162,7 +156,7 @@ jobs:
             <key>CFBundleExecutable</key>
             <string>$APP_NAME</string>
             <key>CFBundleIconFile</key>
-            <string>$ICON_NAME</string>
+            <string>icon.icns</string>
             <key>CFBundleIdentifier</key>
             <string>$APP_IDENTIFIER</string>
             <key>CFBundleInfoDictionaryVersion</key>
@@ -233,13 +227,3 @@ jobs:
         files: |
           dist/Video Thing.dmg
         token: ${{ secrets.GITHUB_TOKEN }}
-
-
-
-
-
-
-
-
-
-
