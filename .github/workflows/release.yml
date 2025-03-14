@@ -61,7 +61,7 @@ jobs:
 
     - name: Update Info.plist
       run: |
-        sed -i "s/_APP_VERSION_/$APP_VERSION/g" "$CONTENTS_DIR/Info.plist"
+        sed -i '' "s/_APP_VERSION_/$APP_VERSION/g" "$CONTENTS_DIR/Info.plist"
 
     - name: Ad-hoc Code Sign App
       run: |
