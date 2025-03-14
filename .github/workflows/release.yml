@@ -6,27 +6,26 @@ on:
   pull_request:
     branches: [ main ]
 
-# Set permissions for the entire workflow
 permissions:
   contents: write
 
 jobs:
   build:
     runs-on: macos-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install PyQt6 setuptools
-    
+
     - name: Build macOS App
       run: |
         # Configuration
@@ -35,38 +34,38 @@ jobs:
         APP_VERSION="1.0.0"
         SCRIPT_NAME="app.py"
         ICON_NAME="icon.icns"
-        
+
         # Directory for the app
         APP_DIR="./dist/${APP_NAME}.app"
         CONTENTS_DIR="$APP_DIR/Contents"
         MACOS_DIR="$CONTENTS_DIR/MacOS"
         RESOURCES_DIR="$CONTENTS_DIR/Resources"
         FRAMEWORKS_DIR="$CONTENTS_DIR/Frameworks"
-        
+
         # Clean previous builds
         echo "Cleaning previous builds..."
         rm -rf "$APP_DIR"
         mkdir -p "$(dirname "$APP_DIR")"
-        
+
         # Create app directory structure
         echo "Creating app bundle structure..."
         mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR"
-        
+
         # Copy app resources
         echo "Copying application resources..."
         cp "$SCRIPT_NAME" "$RESOURCES_DIR/"
         if [ -f "$ICON_NAME" ]; then
             cp "$ICON_NAME" "$RESOURCES_DIR/"
         fi
-        
+
         # Create main launcher
         cat > "$MACOS_DIR/$APP_NAME" << 'EOF'
         #!/bin/bash
-        
+
         # Get absolute path to the executable directory
         SELF_PATH=$(cd -P -- "$(dirname -- "$0")" && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
         DIR=$(dirname "$SELF_PATH")
-        
+
         # Get absolute path to Resources
         RESOURCES_DIR="$DIR/../Resources"
         if [ -d "$RESOURCES_DIR" ]; then
@@ -81,7 +80,7 @@ jobs:
                 exit 1
             fi
         fi
-        
+
         # Download ffmpeg if not present (for current architecture)
         if [ ! -f "$RESOURCES_DIR/ffmpeg" ]; then
           echo "Downloading ffmpeg..."
@@ -90,7 +89,7 @@ jobs:
           rm "$RESOURCES_DIR/ffmpeg.zip"
           chmod +x "$RESOURCES_DIR/ffmpeg"
         fi
-        
+
         # Download ffprobe if not present (for current architecture)
         if [ ! -f "$RESOURCES_DIR/ffprobe" ]; then
           echo "Downloading ffprobe..."
@@ -99,46 +98,46 @@ jobs:
           rm "/tmp/ffprobe.zip"
           chmod +x "$RESOURCES_DIR/ffprobe"
         fi
-        
+
         # Run the app
-        
+
         # Check if this is the first run
         FIRST_RUN_FLAG="$DIR/.installed"
         if [ ! -f "$FIRST_RUN_FLAG" ]; then
             # Create a temporary Python virtual environment for the right architecture
             TEMP_ENV_DIR="$DIR/venv"
-        
+
             # Remove any existing environment
             if [ -d "$TEMP_ENV_DIR" ]; then
                 rm -rf "$TEMP_ENV_DIR"
             fi
-        
+
             # Create a fresh environment
             python3 -m venv "$TEMP_ENV_DIR"
-        
+
             "$TEMP_ENV_DIR/bin/pip" install --upgrade pip
-        
+
             # Install required packages
             "$TEMP_ENV_DIR/bin/pip" install PyQt6 setuptools
-        
+
             # Create flag file to indicate we've run the setup
             touch "$FIRST_RUN_FLAG"
         fi
-        
+
         # Use the virtual environment if it exists
         if [ -d "$DIR/venv" ]; then
             PYTHON_EXE="$DIR/venv/bin/python3"
         else
             PYTHON_EXE="python3"
         fi
-        
+
         # Now run the actual app
         cd "$DIR"
         "$PYTHON_EXE" "$RESOURCES_DIR/app.py"
         EOF
-        
+
         chmod +x "$MACOS_DIR/$APP_NAME"
-        
+
         # Create Info.plist
         echo "Creating Info.plist..."
         cat > "$CONTENTS_DIR/Info.plist" << EOF
@@ -173,23 +172,23 @@ jobs:
             <key>LSMinimumSystemVersion</key>
             <string>10.14</string>
             <key>NSHumanReadableCopyright</key>
-            <string>Copyright © 2025</string>
+            <string>Copyright © 2025 $APP_NAME</string>
             <key>LSUIElement</key>
             <false/>
         </dict>
         </plist>
         EOF
-        
+
         # Create DMG file for distribution
         echo "Creating DMG for distribution..."
         DMG_NAME="$APP_NAME.dmg"
         DMG_VOLUME="$APP_NAME"
-        
+
         # Create a DMG directly from the app folder
         hdiutil create -volname "$DMG_VOLUME" -srcfolder "$APP_DIR" -ov -format UDZO "dist/$DMG_NAME"
-        
+
         echo "DMG created: dist/$DMG_NAME"
-    
+
     - name: Get version from file or set default
       id: get_version
       run: |
@@ -198,7 +197,7 @@ jobs:
         else
           echo "VERSION=1.0.0" >> $GITHUB_OUTPUT
         fi
-    
+
     - name: Create Release
       id: create_release
       uses: softprops/action-gh-release@v1
