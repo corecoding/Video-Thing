@@ -215,15 +215,15 @@ jobs:
         fi
 
         # export env var for subsequent steps
-        echo "VERSION=$tag" >> $GITHUB_ENV
+        echo "VERSION=$tag" >> $GITHUB_OUTPUT
 
     - name: Create release
       id: create_release
       uses: softprops/action-gh-release@v1
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       with:
-        tag_name: v${{ steps.get_version.outputs.VERSION }}
-        name: Release v${{ steps.get_version.outputs.VERSION }}
+        tag_name: ${{ steps.get_version.outputs.VERSION }}
+        name: Release ${{ steps.get_version.outputs.VERSION }}
         draft: false
         prerelease: false
         files: |
