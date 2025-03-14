@@ -37,13 +37,15 @@ jobs:
       run: |
         # Directory for the app
         echo "here 0"
-        echo "APP_DIR=./dist/${APP_NAME}.app"
-        echo "APP_DIR=./dist/${APP_NAME}.app" >> $GITHUB_ENV
-        #echo "CONTENTS_DIR=./dist/${APP_NAME}.app/Contents" >> $GITHUB_ENV
-        echo "CONTENTS_DIR="$APP_DIR/Contents" >> $GITHUB_ENV
+        #echo "APP_DIR=./dist/${APP_NAME}.app"
         echo "here 1"
-        echo $CONTENTS_DIR
+        echo "APP_DIR=./dist/${APP_NAME}.app" >> $GITHUB_ENV
         echo "here 2"
+        echo $APP_DIR
+        echo "here 3"
+        #echo "CONTENTS_DIR=./dist/${APP_NAME}.app/Contents" >> $GITHUB_ENV
+        #echo "CONTENTS_DIR="$APP_DIR/Contents" >> $GITHUB_ENV
+        #echo $CONTENTS_DIR
 
         #CPM#MACOS_DIR="$CONTENTS_DIR/MacOS"
         #CPM#RESOURCES_DIR="$CONTENTS_DIR/Resources"
