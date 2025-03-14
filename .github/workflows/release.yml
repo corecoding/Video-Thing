@@ -189,6 +189,10 @@ jobs:
         </plist>
         EOF
 
+    - name: Ad-hoc Code Sign App
+      run: |
+        codesign --force --deep --sign - "$APP_DIR"
+
     - name: Create DMG file
       run: |
         hdiutil create -volname "$APP_NAME" -srcfolder "$APP_DIR" -ov -format UDZO "dist/$APP_NAME.dmg"
@@ -239,27 +243,3 @@ jobs:
 
 
 
-      #- name: Create Release
-      #  id: create_release
-      #  uses: actions/create-release@v1
-      #  env:
-      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #  with:
-      #    tag_name: ${{ env.TAG }}
-      #    release_name: Release ${{ env.TAG }}
-      #    draft: false
-      #    prerelease: false
-
-      #- name: Upload Release Asset
-      #  id: upload-release-asset
-      #  uses: actions/upload-release-asset@v1
-      #  env:
-      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #  with:
-      #    # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object,
-      #    # which include a `upload_url`. See this blog post for more info:
-      #    # https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-      #    upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #    asset_path: ./vitals.zip
-      #    asset_name: vitals.zip
-      #    asset_content_type: application/zip
