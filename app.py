@@ -5,27 +5,12 @@ import sys
 import subprocess
 import os
 import tempfile
-
-# Now import the required modules
-try:
-    import pkg_resources
-    import multiprocessing
-    from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
-                               QPushButton, QMessageBox, QListWidget,
-                               QHBoxLayout, QProgressBar, QLabel, QFileDialog)
-    from PyQt6.QtCore import Qt, QThread, pyqtSignal
-except ImportError as e:
-    print(f"Error importing modules: {e}")
-    # Show error message in GUI if possible, otherwise use console
-    try:
-        app = QApplication(sys.argv)
-        QMessageBox.critical(None, "Error", f"Failed to load required modules: {e}\n\nPlease ensure PyQt6 is installed correctly.")
-        sys.exit(1)
-    except:
-        print("Could not initialize QApplication to show error message.")
-        print("Please ensure required modules are installed correctly:")
-        print("This application requires: PyQt6, setuptools")
-        sys.exit(1)
+#import pkg_resources
+import multiprocessing
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+                           QPushButton, QMessageBox, QListWidget,
+                           QHBoxLayout, QProgressBar, QLabel, QFileDialog)
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 
 class MergeWorker(QThread):
     progress = pyqtSignal(int)
