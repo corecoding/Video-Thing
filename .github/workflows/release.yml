@@ -43,25 +43,25 @@ jobs:
         echo $CONTENTS_DIR
         echo "here 2"
 
-        MACOS_DIR="$CONTENTS_DIR/MacOS"
-        RESOURCES_DIR="$CONTENTS_DIR/Resources"
-        FRAMEWORKS_DIR="$CONTENTS_DIR/Frameworks"
+        #CPM#MACOS_DIR="$CONTENTS_DIR/MacOS"
+        #CPM#RESOURCES_DIR="$CONTENTS_DIR/Resources"
+        #CPM#FRAMEWORKS_DIR="$CONTENTS_DIR/Frameworks"
 
         # Clean previous builds
-        echo "Cleaning previous builds..."
-        rm -rf "$APP_DIR"
-        mkdir -p "$(dirname "$APP_DIR")"
+        #CPM#echo "Cleaning previous builds..."
+        #CPM#rm -rf "$APP_DIR"
+        #CPM#mkdir -p "$(dirname "$APP_DIR")"
 
         # Create app directory structure
-        echo "Creating app bundle structure..."
-        mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR"
+        #CPM#echo "Creating app bundle structure..."
+        #CPM#mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR"
 
         # Copy app resources
-        echo "Copying application resources..."
-        cp "$SCRIPT_NAME" "$RESOURCES_DIR/"
-        if [ -f "$ICON_NAME" ]; then
-            cp "$ICON_NAME" "$RESOURCES_DIR/"
-        fi
+        #CPM#echo "Copying application resources..."
+        #CPM#cp "$SCRIPT_NAME" "$RESOURCES_DIR/"
+        #CPM#if [ -f "$ICON_NAME" ]; then
+        #CPM#    cp "$ICON_NAME" "$RESOURCES_DIR/"
+        #CPM#fi
 
     - name: Create main launcher
       run: |
