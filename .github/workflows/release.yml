@@ -60,6 +60,9 @@ jobs:
 
     - name: Create main launcher
       run: |
+        echo "here 1"
+        echo "$MACOS_DIR/$APP_NAME"
+        echo "here 2"
         cat > "$MACOS_DIR/$APP_NAME" << 'EOF'
         #!/bin/bash
 
