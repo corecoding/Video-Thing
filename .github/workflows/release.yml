@@ -194,12 +194,9 @@ jobs:
         </plist>
         EOF
 
-    - name: Create DMG file for distribution
+    - name: Create DMG file
       run: |
-        DMG_NAME="$APP_NAME.dmg"
-        DMG_VOLUME="$APP_NAME"
-        hdiutil create -volname "$DMG_VOLUME" -srcfolder "$APP_DIR" -ov -format UDZO "dist/$DMG_NAME"
-        echo "DMG created: dist/$DMG_NAME"
+        hdiutil create -volname "$APP_NAME" -srcfolder "$APP_DIR" -ov -format UDZO "dist/$APP_NAME.dmg"
 
     - name: Get version from file or set default
       id: get_version
