@@ -38,7 +38,7 @@ jobs:
         # Directory for the app
         echo "APP_DIR=./dist/${APP_NAME}.app" >> $GITHUB_ENV
         #echo "CONTENTS_DIR=./dist/${APP_NAME}.app/Contents" >> $GITHUB_ENV
-        echo "CONTENTS_DIR="$APP_DIR/Contents" >> $GITHUB_ENV
+        echo "CONTENTS_DIR=$APP_DIR/Contents" >> $GITHUB_ENV
 
         #CPM#MACOS_DIR="$CONTENTS_DIR/MacOS"
         #CPM#RESOURCES_DIR="$CONTENTS_DIR/Resources"
