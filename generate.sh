@@ -1,4 +1,20 @@
 #!/bin/bash
+set -e  # Exit on error
+
+# Configuration
+APP_NAME="Video Thing"
+APP_IDENTIFIER="com.yourdomain.videothing"
+ICON_NAME="icon.icns"
+
+# Directory for the app
+APP_DIR="./template"
+CONTENTS_DIR="$APP_DIR/Contents"
+MACOS_DIR="$CONTENTS_DIR/MacOS"
+
+# main launcher that handles architecture compatibility
+echo "Creating $MACOS_DIR/$APP_NAME..."
+cat > "$MACOS_DIR/$APP_NAME" << 'EOF'
+#!/bin/bash
 
 # Get absolute path to the executable directory
 SELF_PATH=$(cd -P -- "$(dirname -- "$0")" && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
@@ -70,3 +86,47 @@ fi
 # Run the app
 cd "$DIR"
 "$PYTHON_EXE" "$RESOURCES_DIR/app.py"
+EOF
+
+chmod +x "$MACOS_DIR/$APP_NAME"
+
+# Create Info.plist
+echo "Creating $CONTENTS_DIR/Info.plist..."
+cat > "$CONTENTS_DIR/Info.plist" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>English</string>
+    <key>CFBundleDisplayName</key>
+    <string>$APP_NAME</string>
+    <key>CFBundleExecutable</key>
+    <string>$APP_NAME</string>
+    <key>CFBundleIconFile</key>
+    <string>$ICON_NAME</string>
+    <key>CFBundleIdentifier</key>
+    <string>$APP_IDENTIFIER</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$APP_NAME</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>_APP_VERSION_</string>
+    <key>CFBundleVersion</key>
+    <string>_APP_VERSION_</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.utilities</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.14</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2025 Core Coding</string>
+    <key>LSUIElement</key>
+    <false/>
+</dict>
+</plist>
+EOF
