@@ -1,13 +1,7 @@
-Video Thing
+# Video Thing
 
-This application requires Python 3 to be installed on your Mac.
-If you don't have Python 3 installed, please download it from:
-https://www.python.org/downloads/
+Combines video files and audio files to generate a single YouTube worthy video.
 
-When you first launch the app, it will check for and install
-any required Python packages using pip.
+## After downloading, run this command
 
-Requirements:
-- Python 3.6 or higher
-- pip (which comes with Python)
-- Python's venv module (should come with Python)
+xattr -d com.apple.quarantine Video\ Thing.app
