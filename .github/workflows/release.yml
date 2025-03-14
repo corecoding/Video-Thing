@@ -48,8 +48,8 @@ jobs:
       run: |
         # Clean previous builds
         echo "Cleaning previous builds..."
-        #rm -rf "$APP_DIR"
-        #mkdir -p "$(dirname "$APP_DIR")"
+        rm -rf "$APP_DIR"
+        mkdir -p "$(dirname "$APP_DIR")"
         cp -R template "$APP_DIR"
 
         # Create app directory structure
