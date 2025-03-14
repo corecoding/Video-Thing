@@ -33,38 +33,46 @@ jobs:
         python -m pip install --upgrade pip
         pip install PyQt6 setuptools
 
-    - name: Assemble environment variables
+    - name: Prepare APP_DIR
       run: |
-        # Directory for the app
         echo "APP_DIR=./dist/${APP_NAME}.app" >> $GITHUB_ENV
-        #echo "CONTENTS_DIR=./dist/${APP_NAME}.app/Contents" >> $GITHUB_ENV
+
+    - name: Prepare CONTENTS_DIR
+      run: |
         echo "CONTENTS_DIR=$APP_DIR/Contents" >> $GITHUB_ENV
 
-        #CPM#MACOS_DIR="$CONTENTS_DIR/MacOS"
-        #CPM#RESOURCES_DIR="$CONTENTS_DIR/Resources"
-        #CPM#FRAMEWORKS_DIR="$CONTENTS_DIR/Frameworks"
+    - name: Prepare MACOS_DIR
+      run: |
+        echo "MACOS_DIR=$CONTENTS_DIR/MacOS" >> $GITHUB_ENV
 
+    - name: Prepare RESOURCES_DIR
+      run: |
+        echo "RESOURCES_DIR=$CONTENTS_DIR/Resources" >> $GITHUB_ENV
+
+    - name: Prepare FRAMEWORKS_DIR
+      run: |
+        echo "FRAMEWORKS_DIR=$CONTENTS_DIR/Frameworks" >> $GITHUB_ENV
+
+    - name: Cleanup env
+      run: |
         # Clean previous builds
-        #CPM#echo "Cleaning previous builds..."
-        #CPM#rm -rf "$APP_DIR"
-        #CPM#mkdir -p "$(dirname "$APP_DIR")"
+        echo "Cleaning previous builds..."
+        rm -rf "$APP_DIR"
+        mkdir -p "$(dirname "$APP_DIR")"
 
         # Create app directory structure
-        #CPM#echo "Creating app bundle structure..."
-        #CPM#mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR"
+        echo "Creating app bundle structure..."
+        mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR"
 
         # Copy app resources
-        #CPM#echo "Copying application resources..."
-        #CPM#cp "$SCRIPT_NAME" "$RESOURCES_DIR/"
-        #CPM#if [ -f "$ICON_NAME" ]; then
-        #CPM#    cp "$ICON_NAME" "$RESOURCES_DIR/"
-        #CPM#fi
+        echo "Copying application resources..."
+        cp "$SCRIPT_NAME" "$RESOURCES_DIR/"
+        if [ -f "$ICON_NAME" ]; then
+            cp "$ICON_NAME" "$RESOURCES_DIR/"
+        fi
 
     - name: Create main launcher
       run: |
-        echo "there 1"
-        echo "$CONTENTS_DIR"
-        echo "there 2"
         cat > "$MACOS_DIR/$APP_NAME" << 'EOF'
         #!/bin/bash
 
