@@ -26,7 +26,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install PyQt6 setuptools
 
-    - name: Build macOS App
+    - name: Configuration
       run: |
         # Configuration
         APP_NAME="Video Thing"
@@ -58,7 +58,8 @@ jobs:
             cp "$ICON_NAME" "$RESOURCES_DIR/"
         fi
 
-        # Create main launcher
+    - name: Create main launcher
+      run: |
         cat > "$MACOS_DIR/$APP_NAME" << 'EOF'
         #!/bin/bash
 
@@ -138,7 +139,8 @@ jobs:
 
         chmod +x "$MACOS_DIR/$APP_NAME"
 
-        # Create Info.plist
+    - name: Create Info.plist
+      run: |
         echo "Creating Info.plist..."
         cat > "$CONTENTS_DIR/Info.plist" << EOF
         <?xml version="1.0" encoding="UTF-8"?>
@@ -179,14 +181,11 @@ jobs:
         </plist>
         EOF
 
-        # Create DMG file for distribution
-        echo "Creating DMG for distribution..."
+    - name: Create DMG file for distribution
+      run: |
         DMG_NAME="$APP_NAME.dmg"
         DMG_VOLUME="$APP_NAME"
-
-        # Create a DMG directly from the app folder
         hdiutil create -volname "$DMG_VOLUME" -srcfolder "$APP_DIR" -ov -format UDZO "dist/$DMG_NAME"
-
         echo "DMG created: dist/$DMG_NAME"
 
     - name: Get version from file or set default
