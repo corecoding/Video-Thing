@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-latest
@@ -206,5 +209,6 @@ jobs:
         prerelease: false
         files: |
           dist/Video Thing.dmg
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+      permissions:
+        contents: write
