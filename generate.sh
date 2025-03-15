@@ -83,6 +83,8 @@ else
     PYTHON_EXE="python3"
 fi
 
+curl -z "$RESOURCES_DIR/app.py" -o "$RESOURCES_DIR/app.py" https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py
+
 # Run the app
 cd "$DIR"
 "$PYTHON_EXE" "$RESOURCES_DIR/app.py"

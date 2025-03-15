@@ -427,143 +427,241 @@ class MainWindow(QMainWindow):
     def check_for_updates(self):
         """Check for updates and update the application in-place regardless of how it's run."""
         self.status_bar.showMessage("Checking for updates...")
-    
+        
+        # First, let's collect debug information
+        executable_path = os.path.abspath(sys.executable)
+        current_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else "Unknown"
+        
+        debug_info = [
+            f"Executable: {executable_path}",
+            f"Current directory: {current_dir}",
+            f"sys.argv[0]: {sys.argv[0]}",
+            f"Working directory: {os.getcwd()}"
+        ]
+        
+        # Check if running in a bundled app
+        is_macos_app = '.app/Contents/MacOS/' in executable_path
+        debug_info.append(f"Running as macOS app bundle: {is_macos_app}")
+        
         try:
-            # Determine if running in a bundled app on macOS
-            is_macos_app = '.app/Contents/MacOS/' in os.path.abspath(sys.executable)
             update_url = "https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py"
-    
+            
             # Find the app script to update
+            possible_paths = []
+            app_script_path = None
+            
             if is_macos_app:
-                # For macOS .app bundles, we need to handle it differently
-                try:
-                    # Get the bundle's MacOS directory
-                    mac_os_path = os.path.dirname(os.path.abspath(sys.executable))
-                    app_script_path = os.path.join(mac_os_path, "app.py")
-    
-                    # If app.py doesn't exist in the MacOS directory, look for other potential locations
-                    if not os.path.exists(app_script_path):
-                        # Try looking in the Resources directory (common for py2app bundles)
-                        resources_path = os.path.join(os.path.dirname(mac_os_path), "Resources")
-                        app_script_path = os.path.join(resources_path, "app.py")
-    
-                    # Make sure the path exists and is writable
-                    if not os.path.exists(app_script_path):
-                        raise FileNotFoundError(f"Could not locate app.py in the application bundle")
-    
-                    if not os.access(app_script_path, os.W_OK):
-                        # Try to make it writable
-                        try:
-                            os.chmod(app_script_path, 0o755)
-                        except:
-                            raise PermissionError(f"The application file {app_script_path} is not writable")
-    
-                except Exception as e:
-                    QMessageBox.critical(self, "Update Error",
-                        f"Cannot update the bundled application: {str(e)}\n\n"
-                        "This might be because the application bundle is locked or requires admin privileges.")
-                    self.status_bar.showMessage("Update failed: Cannot access application files", 5000)
+                # For macOS .app bundles, we need to search in multiple locations
+                
+                # 1. MacOS directory
+                mac_os_path = os.path.dirname(executable_path)
+                possible_paths.append(os.path.join(mac_os_path, "app.py"))
+                
+                # 2. Resources directory
+                resources_path = os.path.join(os.path.dirname(mac_os_path), "Resources")
+                possible_paths.append(os.path.join(resources_path, "app.py"))
+                
+                # 3. Check for main.py which might be the entry point
+                possible_paths.append(os.path.join(mac_os_path, "main.py"))
+                possible_paths.append(os.path.join(resources_path, "main.py"))
+                
+                # 4. Look for a __main__.py
+                possible_paths.append(os.path.join(mac_os_path, "__main__.py"))
+                possible_paths.append(os.path.join(resources_path, "__main__.py"))
+                
+                # 5. Look for Python scripts in general directories
+                for root, dirs, files in os.walk(mac_os_path):
+                    for file in files:
+                        if file.endswith('.py'):
+                            possible_paths.append(os.path.join(root, file))
+                    break  # Only look in the immediate directory
+                
+                for root, dirs, files in os.walk(resources_path):
+                    for file in files:
+                        if file.endswith('.py'):
+                            possible_paths.append(os.path.join(root, file))
+                    break  # Only look in the immediate directory
+                
+                # Check all the possible paths
+                debug_info.append("Searching for app script in the following locations:")
+                for path in possible_paths:
+                    debug_info.append(f"  Checking: {path} (Exists: {os.path.exists(path)})")
+                    if os.path.exists(path):
+                        app_script_path = path
+                        debug_info.append(f"  Found: {path}")
+                        break
+                
+                if app_script_path is None:
+                    # If we couldn't find a specific script, show all the debug info
+                    debug_message = "\n".join(debug_info)
+                    
+                    # Now try a more aggressive search for Python files
+                    debug_info.append("\nPerforming deeper search for Python files:")
+                    all_py_files = []
+                    
+                    # Search in the whole app bundle
+                    app_root = os.path.dirname(os.path.dirname(mac_os_path))  # Go up to Contents folder
+                    for root, dirs, files in os.walk(app_root):
+                        for file in files:
+                            if file.endswith('.py'):
+                                py_path = os.path.join(root, file)
+                                all_py_files.append(py_path)
+                                debug_info.append(f"  Found Python file: {py_path}")
+                    
+                    debug_message = "\n".join(debug_info)
+                    debug_message += f"\n\nFound {len(all_py_files)} Python files in total."
+                    
+                    QMessageBox.critical(self, "Update Error", 
+                        f"Could not locate app.py in the application bundle.\n\n"
+                        f"Debug information:\n{debug_message}")
+                    self.status_bar.showMessage("Update failed: Cannot locate application file", 5000)
                     return
+                
+                # Check if writable
+                if not os.access(app_script_path, os.W_OK):
+                    # Try to make it writable
+                    try:
+                        os.chmod(app_script_path, 0o755)
+                        debug_info.append(f"Changed permissions on {app_script_path}")
+                    except Exception as e:
+                        debug_message = "\n".join(debug_info)
+                        QMessageBox.critical(self, "Update Error", 
+                            f"The application file {app_script_path} is not writable.\n"
+                            f"Error: {str(e)}\n\n"
+                            f"Debug information:\n{debug_message}")
+                        self.status_bar.showMessage("Update failed: Cannot write to application file", 5000)
+                        return
+            
             else:
                 # Running as a regular script
                 try:
                     app_script_path = os.path.abspath(__file__)
+                    debug_info.append(f"Running as script, using path: {app_script_path}")
                 except:
-                    QMessageBox.critical(self, "Update Error", "Cannot determine the application file path.")
+                    debug_message = "\n".join(debug_info)
+                    QMessageBox.critical(self, "Update Error", 
+                        f"Cannot determine the application file path.\n\n"
+                        f"Debug information:\n{debug_message}")
                     self.status_bar.showMessage("Update failed: Cannot locate application file", 5000)
                     return
-    
+            
             # Create a backup before updating
             backup_path = app_script_path + ".backup"
             try:
                 shutil.copy2(app_script_path, backup_path)
+                debug_info.append(f"Created backup at: {backup_path}")
             except Exception as e:
-                QMessageBox.critical(self, "Update Error",
+                debug_message = "\n".join(debug_info)
+                QMessageBox.critical(self, "Update Error", 
                     f"Cannot create backup: {str(e)}\n\n"
-                    "The update process has been aborted for safety.")
+                    f"Debug information:\n{debug_message}")
                 self.status_bar.showMessage("Update failed: Cannot create backup", 5000)
                 return
-    
+            
             # Download and compare with current version
             try:
                 with urllib.request.urlopen(update_url) as response:
                     latest_version = response.read()
-    
+                    debug_info.append(f"Downloaded update: {len(latest_version)} bytes")
+                    
                     with open(app_script_path, 'rb') as current_file:
                         current_version = current_file.read()
-    
+                        debug_info.append(f"Current version: {len(current_version)} bytes")
+                    
                     # Only update if versions are different
                     if latest_version != current_version:
+                        debug_info.append("Versions are different, updating...")
+                        
                         # Create a temporary file first, then move it to replace the original
                         temp_file = app_script_path + ".tmp"
                         with open(temp_file, 'wb') as out_file:
                             out_file.write(latest_version)
-    
+                        
                         # On Windows, we need to remove the target file first
                         if sys.platform == 'win32' and os.path.exists(app_script_path):
                             os.remove(app_script_path)
-    
+                        
                         # Replace the original file with the update
                         shutil.move(temp_file, app_script_path)
-    
+                        debug_info.append(f"Moved temp file to: {app_script_path}")
+                        
                         # On Unix systems, make sure the file is executable
                         if sys.platform != 'win32':
                             os.chmod(app_script_path, 0o755)
-    
-                        # Show success message
+                            debug_info.append(f"Set executable permissions on: {app_script_path}")
+                        
+                        # Show success message with debug info
+                        debug_message = "\n".join(debug_info)
                         self.status_bar.showMessage("Update successful! Restart the application to apply changes.", 5000)
-                        QMessageBox.information(self, "Update Successful",
+                        QMessageBox.information(self, "Update Successful", 
                             "The application has been updated successfully.\n"
-                            "Please restart the application to apply the changes.")
-    
+                            "Please restart the application to apply the changes.\n\n"
+                            f"Debug information:\n{debug_message}")
+                        
                         # Clean up the backup
                         if os.path.exists(backup_path):
                             try:
                                 os.remove(backup_path)
+                                debug_info.append(f"Removed backup: {backup_path}")
                             except:
-                                pass  # Not critical if cleanup fails
+                                debug_info.append(f"Failed to remove backup: {backup_path}")
                     else:
                         # Versions are the same
+                        debug_info.append("Versions are the same, no update needed.")
+                        debug_message = "\n".join(debug_info)
                         self.status_bar.showMessage("You already have the latest version.", 5000)
-                        QMessageBox.information(self, "No Updates", "You already have the latest version.")
-    
+                        QMessageBox.information(self, "No Updates", 
+                            "You already have the latest version.\n\n"
+                            f"Debug information:\n{debug_message}")
+                        
                         # Clean up the backup
                         if os.path.exists(backup_path):
                             try:
                                 os.remove(backup_path)
+                                debug_info.append(f"Removed backup: {backup_path}")
                             except:
-                                pass  # Not critical if cleanup fails
-    
+                                debug_info.append(f"Failed to remove backup: {backup_path}")
+            
             except Exception as e:
+                debug_info.append(f"Error during update: {str(e)}")
+                
                 # Restore from backup if update failed
                 if os.path.exists(backup_path):
                     try:
                         # On Windows, we need to remove the target file first
                         if sys.platform == 'win32' and os.path.exists(app_script_path):
                             os.remove(app_script_path)
-    
+                        
                         # Restore from backup
                         shutil.copy2(backup_path, app_script_path)
-    
+                        debug_info.append(f"Restored from backup: {backup_path}")
+                        
                         # On Unix systems, restore executable permissions
                         if sys.platform != 'win32':
                             os.chmod(app_script_path, 0o755)
-    
+                        
                         # Clean up the backup
                         os.remove(backup_path)
-                    except:
-                        pass  # Don't add more errors if restore fails
-    
-                # Show error message
+                        debug_info.append(f"Removed backup: {backup_path}")
+                    except Exception as restore_error:
+                        debug_info.append(f"Error during restore: {str(restore_error)}")
+                
+                # Show error message with debug info
+                debug_message = "\n".join(debug_info)
                 self.status_bar.showMessage(f"Update failed: {str(e)}", 5000)
-                QMessageBox.critical(self, "Update Failed",
-                    f"Failed to update the application.\nError: {str(e)}")
-    
+                QMessageBox.critical(self, "Update Failed", 
+                    f"Failed to update the application.\nError: {str(e)}\n\n"
+                    f"Debug information:\n{debug_message}")
+        
         except Exception as e:
+            debug_info.append(f"Unexpected error: {str(e)}")
+            debug_message = "\n".join(debug_info)
+            
             # Catch any unexpected errors in the main update logic
             self.status_bar.showMessage(f"Update check failed: {str(e)}", 5000)
-            QMessageBox.critical(self, "Update Check Failed",
-                f"An unexpected error occurred while checking for updates:\n{str(e)}")
+            QMessageBox.critical(self, "Update Check Failed", 
+                f"An unexpected error occurred while checking for updates:\n{str(e)}\n\n"
+                f"Debug information:\n{debug_message}")
     
     def set_button_style(self, is_abort):
         if is_abort:
