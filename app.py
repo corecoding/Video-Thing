@@ -425,94 +425,107 @@ class MainWindow(QMainWindow):
         app_menu.addAction(update_action)
 
     def check_for_updates(self):
+        """Check for updates, with different behaviors for script vs bundled app."""
+        self.status_bar.showMessage("Checking for updates...")
+    
         try:
-            self.status_bar.showMessage("Checking for updates...")
-            
-            # Determine if running in a bundle or as a script
-            is_bundled = hasattr(sys, "frozen") and getattr(sys, "frozen", False)
-            
+            # Safe way to determine if running as a bundled app
+            is_bundled = False
+            try:
+                # Check typical py2app/PyInstaller bundle indicators
+                if getattr(sys, 'frozen', False):
+                    is_bundled = True
+                # For macOS .app bundles, check the path
+                elif '.app/Contents/MacOS/' in os.path.abspath(sys.executable):
+                    is_bundled = True
+            except:
+                # If any error occurs during detection, assume not bundled
+                pass
+    
+            # Define the update URL
+            update_url = "https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py"
+    
             if is_bundled:
-                # For bundled app, download to a temporary file and prompt user to download new version
-                update_url = "https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py"
-                
-                with urllib.request.urlopen(update_url) as response:
-                    latest_version = response.read().decode('utf-8')
-                    
-                    # Get current script content
-                    with open(__file__, 'r') as current_file:
-                        current_version = current_file.read()
-                    
-                    # Simple version check - you might want a more sophisticated version comparison
-                    if latest_version != current_version:
-                        # Prompt user to download the new version
-                        reply = QMessageBox.question(
-                            self, "Update Available",
-                            "A new version is available. Would you like to download it?",
-                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                        )
-                        
-                        if reply == QMessageBox.StandardButton.Yes:
-                            # Save the update to the user's downloads folder
-                            downloads_dir = os.path.expanduser("~/Downloads")
-                            update_path = os.path.join(downloads_dir, "VideoThing_new.py")
-                            
-                            with open(update_path, 'w') as update_file:
-                                update_file.write(latest_version)
-                            
-                            QMessageBox.information(
-                                self, "Update Downloaded",
-                                f"The update has been downloaded to:\n{update_path}\n\n"
-                                "Please quit this application and use the new version."
-                            )
-                        
-                        self.status_bar.showMessage("Update check complete", 3000)
-                    else:
-                        self.status_bar.showMessage("You have the latest version", 3000)
-                        QMessageBox.information(self, "No Updates", "You have the latest version.")
-            
+                # For bundled app, just open the GitHub page in the default browser
+                reply = QMessageBox.question(
+                    self,
+                    "Check for Updates",
+                    "Would you like to check for updates on GitHub?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+    
+                if reply == QMessageBox.StandardButton.Yes:
+                    # Open the GitHub repository in the default browser
+                    repo_url = "https://github.com/corecoding/Video-Thing"
+                    self.status_bar.showMessage(f"Opening {repo_url} in browser...", 3000)
+    
+                    # Use the platform-specific way to open URLs
+                    if sys.platform == 'darwin':  # macOS
+                        subprocess.call(['open', repo_url])
+                    elif sys.platform == 'win32':  # Windows
+                        os.startfile(repo_url)
+                    else:  # Linux and others
+                        subprocess.call(['xdg-open', repo_url])
+                else:
+                    self.status_bar.showMessage("Update check canceled", 3000)
+    
             else:
                 # Original update method for running as a script
-                # Get the current script path
-                current_path = os.path.abspath(__file__)
-                
-                # Make a backup of the current script
-                backup_path = current_path + ".backup"
-                shutil.copy2(current_path, backup_path)
-                
-                # Download the updated version
-                update_url = "https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py"
-                with urllib.request.urlopen(update_url) as response, open(current_path, 'wb') as out_file:
-                    shutil.copyfileobj(response, out_file)
-                
-                # Show success message
-                self.status_bar.showMessage("Update successful! Restart the application to apply changes.", 5000)
-                QMessageBox.information(self, "Update Successful", 
-                                      "The application has been updated successfully.\n"
-                                      "Please restart the application to apply the changes.")
-                
-                # Remove backup file if it exists
-                if os.path.exists(backup_path):
-                    try:
-                        os.remove(backup_path)
-                    except:
-                        pass
-                        
-        except Exception as e:
-            # Restore backup if update failed (only for script mode)
-            if not is_bundled and os.path.exists(backup_path):
-                shutil.copy2(backup_path, current_path)
-                
-                # Cleanup backup
                 try:
-                    os.remove(backup_path)
-                except:
-                    pass
-            
-            # Show error message
-            self.status_bar.showMessage(f"Update failed: {str(e)}", 5000)
-            QMessageBox.critical(self, "Update Failed", 
-                               f"Failed to update the application.\nError: {str(e)}")
+                    # Get the current script path
+                    current_path = os.path.abspath(__file__)
     
+                    # Make a backup of the current script
+                    backup_path = current_path + ".backup"
+                    shutil.copy2(current_path, backup_path)
+    
+                    # Download the updated version
+                    with urllib.request.urlopen(update_url) as response, open(current_path, 'wb') as out_file:
+                        shutil.copyfileobj(response, out_file)
+    
+                    # Show success message
+                    self.status_bar.showMessage("Update successful! Restart the application to apply changes.", 5000)
+                    QMessageBox.information(
+                        self,
+                        "Update Successful",
+                        "The application has been updated successfully.\n"
+                        "Please restart the application to apply the changes."
+                    )
+    
+                    # Clean up the backup
+                    if os.path.exists(backup_path):
+                        try:
+                            os.remove(backup_path)
+                        except:
+                            pass
+    
+                except Exception as e:
+                    # Restore backup if update failed
+                    if os.path.exists(backup_path):
+                        try:
+                            shutil.copy2(backup_path, current_path)
+                            os.remove(backup_path)
+                        except:
+                            pass
+    
+                    # Show error message
+                    error_msg = str(e)
+                    self.status_bar.showMessage(f"Update failed: {error_msg}", 5000)
+                    QMessageBox.critical(
+                        self,
+                        "Update Failed",
+                        f"Failed to update the application.\nError: {error_msg}"
+                    )
+    
+        except Exception as e:
+            # Catch any unexpected errors in the main update logic
+            self.status_bar.showMessage(f"Update check failed: {str(e)}", 5000)
+            QMessageBox.critical(
+                self,
+                "Update Check Failed",
+                f"An unexpected error occurred while checking for updates:\n{str(e)}"
+            )
+        
     def set_button_style(self, is_abort):
         if is_abort:
             background_color = "#FF0000"  # Red
