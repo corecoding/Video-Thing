@@ -87,9 +87,9 @@ jobs:
       run: |
         sed -i '' "s/_APP_VERSION_/$VERSION/g" "$CONTENTS_DIR/Info.plist"
 
-    - name: Ad-hoc Code Sign App
-      run: |
-        codesign --force --deep --sign - "$APP_DIR"
+    #- name: Ad-hoc Code Sign App
+    #  run: |
+    #    codesign --force --deep --sign - "$APP_DIR"
 
     - name: Create DMG file
       run: |
