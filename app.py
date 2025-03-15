@@ -20,9 +20,12 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QAction
 
 # Set application information before creating the QApplication
-#QCoreApplication.setOrganizationName("YourCompanyName")
-#QCoreApplication.setOrganizationDomain("yourcompany.com")
-#QCoreApplication.setApplicationName("YourAppName")
+QCoreApplication.setOrganizationName("YourCompanyName")
+QCoreApplication.setOrganizationDomain("yourcompany.com")
+QCoreApplication.setApplicationName("YourAppName")
+QCoreApplication.setOrganizationName("YourCompanyName")
+QCoreApplication.setOrganizationDomain("yourcompany.com")
+QCoreApplication.setApplicationName("YourAppName")
 
 class MergeWorker(QThread):
     progress = pyqtSignal(int)
