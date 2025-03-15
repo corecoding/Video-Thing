@@ -5,12 +5,24 @@ import sys
 import subprocess
 import os
 import tempfile
+import urllib.request
+import shutil
 #import pkg_resources
 import multiprocessing
+
+# Now import PyQt classes
+from PyQt6.QtCore import QCoreApplication
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                            QPushButton, QMessageBox, QListWidget,
-                           QHBoxLayout, QProgressBar, QLabel, QFileDialog)
+                           QHBoxLayout, QProgressBar, QLabel, QFileDialog,
+                           QMenuBar, QMenu, QStatusBar)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtGui import QAction
+
+# Set application information before creating the QApplication
+QCoreApplication.setOrganizationName("YourCompanyName")
+QCoreApplication.setOrganizationDomain("yourcompany.com")
+QCoreApplication.setApplicationName("YourAppName")
 
 class MergeWorker(QThread):
     progress = pyqtSignal(int)
@@ -351,6 +363,13 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Video Thing")
         self.setMinimumSize(500, 400)
+        
+        # Create menu bar
+        self.create_menu_bar()
+        
+        # Create status bar
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -391,7 +410,109 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.merge_button)
 
         self.merge_worker = None
+        
+    def create_menu_bar(self):
+        # Create the main menu bar
+        menu_bar = self.menuBar()
+        
+        # Create the application menu manually
+        # On macOS, this will merge with the application menu
+        app_menu = menu_bar.addMenu("Video Thing")
+        
+        # Add "Check for Updates" action
+        update_action = QAction("Check for Updates", self)
+        update_action.triggered.connect(self.check_for_updates)
+        app_menu.addAction(update_action)
 
+    def check_for_updates(self):
+        try:
+            self.status_bar.showMessage("Checking for updates...")
+            
+            # Determine if running in a bundle or as a script
+            is_bundled = hasattr(sys, "frozen") and getattr(sys, "frozen", False)
+            
+            if is_bundled:
+                # For bundled app, download to a temporary file and prompt user to download new version
+                update_url = "https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py"
+                
+                with urllib.request.urlopen(update_url) as response:
+                    latest_version = response.read().decode('utf-8')
+                    
+                    # Get current script content
+                    with open(__file__, 'r') as current_file:
+                        current_version = current_file.read()
+                    
+                    # Simple version check - you might want a more sophisticated version comparison
+                    if latest_version != current_version:
+                        # Prompt user to download the new version
+                        reply = QMessageBox.question(
+                            self, "Update Available",
+                            "A new version is available. Would you like to download it?",
+                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                        )
+                        
+                        if reply == QMessageBox.StandardButton.Yes:
+                            # Save the update to the user's downloads folder
+                            downloads_dir = os.path.expanduser("~/Downloads")
+                            update_path = os.path.join(downloads_dir, "VideoThing_new.py")
+                            
+                            with open(update_path, 'w') as update_file:
+                                update_file.write(latest_version)
+                            
+                            QMessageBox.information(
+                                self, "Update Downloaded",
+                                f"The update has been downloaded to:\n{update_path}\n\n"
+                                "Please quit this application and use the new version."
+                            )
+                        
+                        self.status_bar.showMessage("Update check complete", 3000)
+                    else:
+                        self.status_bar.showMessage("You have the latest version", 3000)
+                        QMessageBox.information(self, "No Updates", "You have the latest version.")
+            
+            else:
+                # Original update method for running as a script
+                # Get the current script path
+                current_path = os.path.abspath(__file__)
+                
+                # Make a backup of the current script
+                backup_path = current_path + ".backup"
+                shutil.copy2(current_path, backup_path)
+                
+                # Download the updated version
+                update_url = "https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py"
+                with urllib.request.urlopen(update_url) as response, open(current_path, 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
+                
+                # Show success message
+                self.status_bar.showMessage("Update successful! Restart the application to apply changes.", 5000)
+                QMessageBox.information(self, "Update Successful", 
+                                      "The application has been updated successfully.\n"
+                                      "Please restart the application to apply the changes.")
+                
+                # Remove backup file if it exists
+                if os.path.exists(backup_path):
+                    try:
+                        os.remove(backup_path)
+                    except:
+                        pass
+                        
+        except Exception as e:
+            # Restore backup if update failed (only for script mode)
+            if not is_bundled and os.path.exists(backup_path):
+                shutil.copy2(backup_path, current_path)
+                
+                # Cleanup backup
+                try:
+                    os.remove(backup_path)
+                except:
+                    pass
+            
+            # Show error message
+            self.status_bar.showMessage(f"Update failed: {str(e)}", 5000)
+            QMessageBox.critical(self, "Update Failed", 
+                               f"Failed to update the application.\nError: {str(e)}")
+    
     def set_button_style(self, is_abort):
         if is_abort:
             background_color = "#FF0000"  # Red
@@ -486,8 +607,25 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"An error occurred: {message}")
 
 if __name__ == '__main__':
+    # Special handling for macOS to change the menu bar app name
+    if sys.platform == 'darwin':
+        # This is the crucial line that changes "Python" to "Video Thing" in the menu bar
+        # Must be set before creating the QApplication
+        os.environ['QT_MAC_APP_NAME'] = "Video Thing"
+    
+    # Initialize the application
     app = QApplication(sys.argv)
-    app.setApplicationName("Video Thing")  # Set the application name
+    
+    # Set all the app identification strings to "Video Thing"
+    QCoreApplication.setApplicationName("Video Thing")
+    QCoreApplication.setOrganizationName("Video Thing")
+    app.setApplicationName("Video Thing")
+    app.setOrganizationName("Video Thing")
+    
+    # When bundling with py2app, add this to Info.plist:
+    # <key>CFBundleName</key>
+    # <string>Video Thing</string>
+    
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
