@@ -67,7 +67,7 @@ else
     PYTHON_EXE="python3"
 fi
 
-curl -z "$RESOURCES_DIR/app.py" -o "$RESOURCES_DIR/app.py" https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py
+#curl -H 'Pragma: no-cache' -z "$RESOURCES_DIR/app.py" -o "$RESOURCES_DIR/app.py" https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py
 
 # Run the app
 cd "$DIR"
