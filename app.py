@@ -428,35 +428,18 @@ class MainWindow(QMainWindow):
         """Check for updates and update the application in-place by writing to sys.argv[0]."""
         self.status_bar.showMessage("Checking for updates...")
         
-        # First, let's collect debug information
-        executable_path = os.path.abspath(sys.executable)
-        
         # Get the target path from sys.argv[0]
         target_path = os.path.abspath(sys.argv[0])
-        
-        debug_info = [
-            f"Executable: {executable_path}",
-            f"Target update path (sys.argv[0]): {target_path}",
-            f"Working directory: {os.getcwd()}"
-        ]
-        
-        # Check if running in a bundled app
-        is_macos_app = '.app/Contents/' in executable_path
-        debug_info.append(f"Running as macOS app bundle: {is_macos_app}")
         
         try:
             update_url = "https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py"
             
             # Set the app_script_path to sys.argv[0]
             app_script_path = target_path
-            debug_info.append(f"Using direct update path: {app_script_path}")
             
             # Check if the target file exists and is writable
             if not os.path.exists(app_script_path):
-                debug_message = "\n".join(debug_info)
-                QMessageBox.critical(self, "Update Error", 
-                    f"The target file does not exist: {app_script_path}\n\n"
-                    f"Debug information:\n{debug_message}")
+                QMessageBox.critical(self, "Update Error", f"The target file does not exist: {app_script_path}")
                 self.status_bar.showMessage("Update failed: Target file not found", 5000)
                 return
             
@@ -464,13 +447,9 @@ class MainWindow(QMainWindow):
                 # Try to make it writable
                 try:
                     os.chmod(app_script_path, 0o755)
-                    debug_info.append(f"Changed permissions on: {app_script_path}")
                 except Exception as e:
-                    debug_message = "\n".join(debug_info)
                     QMessageBox.critical(self, "Update Error", 
-                        f"The target file is not writable: {app_script_path}\n"
-                        f"Error: {str(e)}\n\n"
-                        f"Debug information:\n{debug_message}")
+                        f"The target file is not writable: {app_script_path}\nError: {str(e)}")
                     self.status_bar.showMessage("Update failed: Cannot write to target file", 5000)
                     return
             
@@ -478,29 +457,28 @@ class MainWindow(QMainWindow):
             backup_path = app_script_path + ".backup"
             try:
                 shutil.copy2(app_script_path, backup_path)
-                debug_info.append(f"Created backup at: {backup_path}")
             except Exception as e:
-                debug_message = "\n".join(debug_info)
                 QMessageBox.critical(self, "Update Error", 
-                    f"Cannot create backup: {str(e)}\n\n"
-                    f"Debug information:\n{debug_message}")
+                    f"Cannot create backup: {str(e)}")
                 self.status_bar.showMessage("Update failed: Cannot create backup", 5000)
                 return
             
             # Download and compare with current version
             try:
-                with urllib.request.urlopen(update_url) as response:
+                # Create a request with no-cache headers to prevent GitHub from serving cached content
+                req = urllib.request.Request(update_url)
+                req.add_header('Pragma', 'no-cache')
+                req.add_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                req.add_header('Expires', '0')
+                
+                with urllib.request.urlopen(req) as response:
                     latest_version = response.read()
-                    debug_info.append(f"Downloaded update: {len(latest_version)} bytes")
                     
                     with open(app_script_path, 'rb') as current_file:
                         current_version = current_file.read()
-                        debug_info.append(f"Current version: {len(current_version)} bytes")
                     
                     # Only update if versions are different
                     if latest_version != current_version:
-                        debug_info.append("Versions are different, updating...")
-                        
                         # Create a temporary file first, then move it to replace the original
                         temp_file = app_script_path + ".tmp"
                         with open(temp_file, 'wb') as out_file:
@@ -512,48 +490,36 @@ class MainWindow(QMainWindow):
                         
                         # Replace the original file with the update
                         shutil.move(temp_file, app_script_path)
-                        debug_info.append(f"Moved temp file to: {app_script_path}")
                         
                         # On Unix systems, make sure the file is executable
                         if sys.platform != 'win32':
                             os.chmod(app_script_path, 0o755)
-                            debug_info.append(f"Set executable permissions on: {app_script_path}")
                         
-                        # Show success message with debug info
-                        debug_message = "\n".join(debug_info)
+                        # Show success message
                         self.status_bar.showMessage("Update successful! Restart the application to apply changes.", 5000)
                         QMessageBox.information(self, "Update Successful", 
                             "The application has been updated successfully.\n"
-                            "Please restart the application to apply the changes.\n\n"
-                            f"Debug information:\n{debug_message}")
+                            "Please restart the application to apply the changes.")
                         
                         # Clean up the backup
                         if os.path.exists(backup_path):
                             try:
                                 os.remove(backup_path)
-                                debug_info.append(f"Removed backup: {backup_path}")
                             except:
-                                debug_info.append(f"Failed to remove backup: {backup_path}")
+                                pass  # Not critical if cleanup fails
                     else:
                         # Versions are the same
-                        debug_info.append("Versions are the same, no update needed.")
-                        debug_message = "\n".join(debug_info)
                         self.status_bar.showMessage("You already have the latest version.", 5000)
-                        QMessageBox.information(self, "No Updates", 
-                            "You already have the latest version.\n\n"
-                            f"Debug information:\n{debug_message}")
+                        QMessageBox.information(self, "No Updates", "You already have the latest version.")
                         
                         # Clean up the backup
                         if os.path.exists(backup_path):
                             try:
                                 os.remove(backup_path)
-                                debug_info.append(f"Removed backup: {backup_path}")
                             except:
-                                debug_info.append(f"Failed to remove backup: {backup_path}")
+                                pass  # Not critical if cleanup fails
             
             except Exception as e:
-                debug_info.append(f"Error during update: {str(e)}")
-                
                 # Restore from backup if update failed
                 if os.path.exists(backup_path):
                     try:
@@ -563,7 +529,6 @@ class MainWindow(QMainWindow):
                         
                         # Restore from backup
                         shutil.copy2(backup_path, app_script_path)
-                        debug_info.append(f"Restored from backup: {backup_path}")
                         
                         # On Unix systems, restore executable permissions
                         if sys.platform != 'win32':
@@ -571,30 +536,20 @@ class MainWindow(QMainWindow):
                         
                         # Clean up the backup
                         os.remove(backup_path)
-                        debug_info.append(f"Removed backup: {backup_path}")
-                    except Exception as restore_error:
-                        debug_info.append(f"Error during restore: {str(restore_error)}")
+                    except:
+                        pass  # Don't add more errors if restore fails
                 
-                # Show error message with debug info
-                debug_message = "\n".join(debug_info)
+                # Show error message
                 self.status_bar.showMessage(f"Update failed: {str(e)}", 5000)
                 QMessageBox.critical(self, "Update Failed", 
-                    f"Failed to update the application.\nError: {str(e)}\n\n"
-                    f"Debug information:\n{debug_message}")
+                    f"Failed to update the application.\nError: {str(e)}")
         
         except Exception as e:
-            debug_info.append(f"Unexpected error: {str(e)}")
-            debug_message = "\n".join(debug_info)
-            
             # Catch any unexpected errors in the main update logic
             self.status_bar.showMessage(f"Update check failed: {str(e)}", 5000)
             QMessageBox.critical(self, "Update Check Failed", 
-                f"An unexpected error occurred while checking for updates:\n{str(e)}\n\n"
-                f"Debug information:\n{debug_message}")
-
-
-
-
+                f"An unexpected error occurred while checking for updates:\n{str(e)}")
+    
 
 
     def set_button_style(self, is_abort):
