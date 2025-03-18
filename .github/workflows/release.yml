@@ -111,10 +111,10 @@ jobs:
           --icon "$APP_NAME.app" 170 230 \
           --app-drop-link 500 230 \
           --text-size 11 \
+          --text-color FFFFFF \
           "dist/$APP_NAME.dmg" \
           "$APP_DIR"
 
-          #--text-color FFFFFF \
           #--no-internet-enable \
 
     - name: Create release
