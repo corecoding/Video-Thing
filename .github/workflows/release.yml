@@ -93,7 +93,20 @@ jobs:
 
     - name: Create DMG file
       run: |
-        hdiutil create -volname "$APP_NAME" -srcfolder "$APP_DIR" -ov -format UDZO "dist/$APP_NAME.dmg"
+        #hdiutil create -volname "$APP_NAME" -srcfolder "$APP_DIR" -ov -format UDZO "dist/$APP_NAME.dmg"
+        #brew install create-dmg
+
+        # Create a customized DMG
+        create-dmg \
+          --volname "$APP_NAME" \
+          --window-pos 200 120 \
+          --window-size 630 400 \
+          --icon-size 100 \
+          --icon "$APP_NAME.app" 150 190 \
+          --app-drop-link 480 190 \
+          --no-internet-enable \
+          "dist/$APP_NAME.dmg" \
+          "$APP_DIR"
 
     - name: Create release
       id: create_release
