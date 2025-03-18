@@ -104,6 +104,7 @@ jobs:
         # Create a customized DMG
         create-dmg \
           --volname "$APP_NAME" \
+          --background "background.png" \
           --window-pos 200 120 \
           --window-size 630 400 \
           --icon-size 100 \
