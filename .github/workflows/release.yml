@@ -87,10 +87,10 @@ jobs:
       run: |
         sed -i '' "s/_APP_VERSION_/$VERSION/g" "$CONTENTS_DIR/Info.plist"
 
-    #- name: Ad-hoc Code Sign App
-    #  run: |
-    #    codesign --force --deep --sign - "$APP_DIR"
-    #
+    - name: Ad-hoc Code Sign App
+      run: |
+        codesign --force --deep --sign - "$APP_DIR"
+
     - name: Install create-dmg
       run: |
         brew install create-dmg
@@ -108,7 +108,7 @@ jobs:
           --window-pos 200 120 \
           --window-size 660 500 \
           --icon-size 100 \
-          --icon "$APP_NAME.app" 155 230 \
+          --icon "$APP_NAME.app" 155 233 \
           --app-drop-link 496 232 \
           --text-size 12 \
           "dist/$APP_NAME.dmg" \
