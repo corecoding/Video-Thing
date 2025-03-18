@@ -108,7 +108,7 @@ jobs:
           --window-pos 200 120 \
           --window-size 660 500 \
           --icon-size 100 \
-          --icon "$APP_NAME.app" 155 225 \
+          --icon "$APP_NAME.app" 155 230 \
           --app-drop-link 496 232 \
           --text-size 12 \
           "dist/$APP_NAME.dmg" \
