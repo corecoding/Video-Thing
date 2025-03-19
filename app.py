@@ -370,10 +370,6 @@ class MainWindow(QMainWindow):
         # Create menu bar
         self.create_menu_bar()
 
-        # Create status bar
-        self.status_bar = QStatusBar()
-        self.setStatusBar(self.status_bar)
-
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
@@ -429,7 +425,6 @@ class MainWindow(QMainWindow):
 
     def check_for_updates(self):
         """Check for updates and update the application in-place by writing to sys.argv[0]."""
-        self.status_bar.showMessage("Checking for updates...")
 
         # Get the target path from sys.argv[0]
         target_path = os.path.abspath(sys.argv[0])
@@ -443,7 +438,6 @@ class MainWindow(QMainWindow):
             # Check if the target file exists and is writable
             if not os.path.exists(app_script_path):
                 QMessageBox.critical(self, "Update Error", f"The target file does not exist: {app_script_path}")
-                self.status_bar.showMessage("Update failed: Target file not found", 5000)
                 return
 
             if not os.access(app_script_path, os.W_OK):
@@ -453,7 +447,6 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     QMessageBox.critical(self, "Update Error",
                         f"The target file is not writable: {app_script_path}\nError: {str(e)}")
-                    self.status_bar.showMessage("Update failed: Cannot write to target file", 5000)
                     return
 
             # Create a backup before updating
@@ -463,7 +456,6 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Update Error",
                     f"Cannot create backup: {str(e)}")
-                self.status_bar.showMessage("Update failed: Cannot create backup", 5000)
                 return
 
             # Download and compare with current version
@@ -499,7 +491,6 @@ class MainWindow(QMainWindow):
                             os.chmod(app_script_path, 0o755)
 
                         # Show success message
-                        self.status_bar.showMessage("Update successful! Restart the application to apply changes.", 5000)
                         QMessageBox.information(self, "Update Successful",
                             "The application has been updated successfully.\n"
                             "Please restart the application to apply the changes.")
@@ -512,7 +503,6 @@ class MainWindow(QMainWindow):
                                 pass  # Not critical if cleanup fails
                     else:
                         # Versions are the same
-                        self.status_bar.showMessage("You already have the latest version.", 5000)
                         QMessageBox.information(self, "No Updates", "You already have the latest version.")
 
                         # Clean up the backup
@@ -543,13 +533,11 @@ class MainWindow(QMainWindow):
                         pass  # Don't add more errors if restore fails
 
                 # Show error message
-                self.status_bar.showMessage(f"Update failed: {str(e)}", 5000)
                 QMessageBox.critical(self, "Update Failed",
                     f"Failed to update the application.\nError: {str(e)}")
 
         except Exception as e:
             # Catch any unexpected errors in the main update logic
-            self.status_bar.showMessage(f"Update check failed: {str(e)}", 5000)
             QMessageBox.critical(self, "Update Check Failed",
                 f"An unexpected error occurred while checking for updates:\n{str(e)}")
 
