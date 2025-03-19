@@ -300,8 +300,8 @@ class FileDropZone(QWidget):
 
     def browse_files(self):
         file_dialog = QFileDialog()
-        # Get user's Documents directory
-        documents_dir = os.path.expanduser("~/Documents")
+        # Get user's Desktop directory
+        documents_dir = os.path.expanduser("~/Desktop")
         files, _ = file_dialog.getOpenFileNames(self, f"Select {self.file_type.upper()} Files", documents_dir, f"{self.file_type.upper()} Files (*.{self.file_type})")
         for file in files:
             if file not in self.filepaths:
@@ -596,7 +596,7 @@ class MainWindow(QMainWindow):
                 return
 
             # Open file dialog to select output destination
-            documents_dir = os.path.expanduser("~/Documents")
+            documents_dir = os.path.expanduser("~/Desktop")
             default_file = os.path.join(documents_dir, "youtube.mp4")
             output_path, _ = QFileDialog.getSaveFileName(self, "Save Video As", default_file, "MP4 Files (*.mp4)")
             if not output_path:
