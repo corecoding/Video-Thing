@@ -364,12 +364,12 @@ class FileDropZone(QWidget):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Video Thing")
+        self.setWindowTitle("Super Audio Book Maker 3000 Premium Limited Edition")
         self.setMinimumSize(500, 400)
-        
+
         # Create menu bar
         self.create_menu_bar()
-        
+
         # Create status bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
@@ -413,15 +413,15 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.merge_button)
 
         self.merge_worker = None
-        
+
     def create_menu_bar(self):
         # Create the main menu bar
         menu_bar = self.menuBar()
-        
+
         # Create the application menu manually
         # On macOS, this will merge with the application menu
         app_menu = menu_bar.addMenu("Video Thing")
-        
+
         # Add "Check for Updates" action
         update_action = QAction("Check for Updates", self)
         update_action.triggered.connect(self.check_for_updates)
@@ -430,42 +430,42 @@ class MainWindow(QMainWindow):
     def check_for_updates(self):
         """Check for updates and update the application in-place by writing to sys.argv[0]."""
         self.status_bar.showMessage("Checking for updates...")
-        
+
         # Get the target path from sys.argv[0]
         target_path = os.path.abspath(sys.argv[0])
-        
+
         try:
             update_url = "https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py"
-            
+
             # Set the app_script_path to sys.argv[0]
             app_script_path = target_path
-            
+
             # Check if the target file exists and is writable
             if not os.path.exists(app_script_path):
                 QMessageBox.critical(self, "Update Error", f"The target file does not exist: {app_script_path}")
                 self.status_bar.showMessage("Update failed: Target file not found", 5000)
                 return
-            
+
             if not os.access(app_script_path, os.W_OK):
                 # Try to make it writable
                 try:
                     os.chmod(app_script_path, 0o755)
                 except Exception as e:
-                    QMessageBox.critical(self, "Update Error", 
+                    QMessageBox.critical(self, "Update Error",
                         f"The target file is not writable: {app_script_path}\nError: {str(e)}")
                     self.status_bar.showMessage("Update failed: Cannot write to target file", 5000)
                     return
-            
+
             # Create a backup before updating
             backup_path = app_script_path + ".backup"
             try:
                 shutil.copy2(app_script_path, backup_path)
             except Exception as e:
-                QMessageBox.critical(self, "Update Error", 
+                QMessageBox.critical(self, "Update Error",
                     f"Cannot create backup: {str(e)}")
                 self.status_bar.showMessage("Update failed: Cannot create backup", 5000)
                 return
-            
+
             # Download and compare with current version
             try:
                 # Create a request with no-cache headers to prevent GitHub from serving cached content
@@ -473,37 +473,37 @@ class MainWindow(QMainWindow):
                 req.add_header('Pragma', 'no-cache')
                 req.add_header('Cache-Control', 'no-cache, no-store, must-revalidate')
                 req.add_header('Expires', '0')
-                
+
                 with urllib.request.urlopen(req) as response:
                     latest_version = response.read()
-                    
+
                     with open(app_script_path, 'rb') as current_file:
                         current_version = current_file.read()
-                    
+
                     # Only update if versions are different
                     if latest_version != current_version:
                         # Create a temporary file first, then move it to replace the original
                         temp_file = app_script_path + ".tmp"
                         with open(temp_file, 'wb') as out_file:
                             out_file.write(latest_version)
-                        
+
                         # On Windows, we need to remove the target file first
                         if sys.platform == 'win32' and os.path.exists(app_script_path):
                             os.remove(app_script_path)
-                        
+
                         # Replace the original file with the update
                         shutil.move(temp_file, app_script_path)
-                        
+
                         # On Unix systems, make sure the file is executable
                         if sys.platform != 'win32':
                             os.chmod(app_script_path, 0o755)
-                        
+
                         # Show success message
                         self.status_bar.showMessage("Update successful! Restart the application to apply changes.", 5000)
-                        QMessageBox.information(self, "Update Successful", 
+                        QMessageBox.information(self, "Update Successful",
                             "The application has been updated successfully.\n"
                             "Please restart the application to apply the changes.")
-                        
+
                         # Clean up the backup
                         if os.path.exists(backup_path):
                             try:
@@ -514,14 +514,14 @@ class MainWindow(QMainWindow):
                         # Versions are the same
                         self.status_bar.showMessage("You already have the latest version.", 5000)
                         QMessageBox.information(self, "No Updates", "You already have the latest version.")
-                        
+
                         # Clean up the backup
                         if os.path.exists(backup_path):
                             try:
                                 os.remove(backup_path)
                             except:
                                 pass  # Not critical if cleanup fails
-            
+
             except Exception as e:
                 # Restore from backup if update failed
                 if os.path.exists(backup_path):
@@ -529,31 +529,29 @@ class MainWindow(QMainWindow):
                         # On Windows, we need to remove the target file first
                         if sys.platform == 'win32' and os.path.exists(app_script_path):
                             os.remove(app_script_path)
-                        
+
                         # Restore from backup
                         shutil.copy2(backup_path, app_script_path)
-                        
+
                         # On Unix systems, restore executable permissions
                         if sys.platform != 'win32':
                             os.chmod(app_script_path, 0o755)
-                        
+
                         # Clean up the backup
                         os.remove(backup_path)
                     except:
                         pass  # Don't add more errors if restore fails
-                
+
                 # Show error message
                 self.status_bar.showMessage(f"Update failed: {str(e)}", 5000)
-                QMessageBox.critical(self, "Update Failed", 
+                QMessageBox.critical(self, "Update Failed",
                     f"Failed to update the application.\nError: {str(e)}")
-        
+
         except Exception as e:
             # Catch any unexpected errors in the main update logic
             self.status_bar.showMessage(f"Update check failed: {str(e)}", 5000)
-            QMessageBox.critical(self, "Update Check Failed", 
+            QMessageBox.critical(self, "Update Check Failed",
                 f"An unexpected error occurred while checking for updates:\n{str(e)}")
-    
-
 
     def set_button_style(self, is_abort):
         if is_abort:
@@ -654,20 +652,20 @@ if __name__ == '__main__':
         # This is the crucial line that changes "Python" to "Video Thing" in the menu bar
         # Must be set before creating the QApplication
         os.environ['QT_MAC_APP_NAME'] = "Video Thing"
-    
+
     # Initialize the application
     app = QApplication(sys.argv)
-    
+
     # Set all the app identification strings to "Video Thing"
     QCoreApplication.setApplicationName("Video Thing")
     QCoreApplication.setOrganizationName("Video Thing")
     app.setApplicationName("Video Thing")
     app.setOrganizationName("Video Thing")
-    
+
     # When bundling with py2app, add this to Info.plist:
     # <key>CFBundleName</key>
     # <string>Video Thing</string>
-    
+
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
