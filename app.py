@@ -283,14 +283,24 @@ class FileDropZone(QWidget):
         self.setAcceptDrops(True)
 
     def dragEnterEvent(self, event):
+        # Check if there are any valid files in the drag operation
         if event.mimeData().hasUrls():
-            event.accept()
-        else:
-            event.ignore()
+            valid_files = any(u.toLocalFile().lower().endswith(f'.{self.file_type}')
+                              for u in event.mimeData().urls())
+            if valid_files:
+                event.acceptProposedAction()
+                return
+
+        event.ignore()
 
     def dropEvent(self, event):
+        # Always accept the event first to prevent the bounce-back animation
+        event.accept()
+
+        # Then process the files
         files = [u.toLocalFile() for u in event.mimeData().urls()
-                if u.toLocalFile().lower().endswith(f'.{self.file_type}')]
+            if u.toLocalFile().lower().endswith(f'.{self.file_type}')]
+
         for file in files:
             if file not in self.filepaths:
                 self.filepaths.append(file)
