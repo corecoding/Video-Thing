@@ -34,14 +34,13 @@ class MergeWorker(QThread):
     def run(self):
         try:
             # Start caffeinate to prevent sleep (macOS only)
-            if sys.platform == 'darwin':
-                self.caffeinate_process = subprocess.Popen(
-                    ['caffeinate', '-i', '-m', '-s', '-d'],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL
-                )
-                if debug:
-                    print("Started caffeinate process to prevent sleep")
+            self.caffeinate_process = subprocess.Popen(
+                ['caffeinate', '-i', '-m', '-s', '-d'],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            if debug:
+                print("Started caffeinate process to prevent sleep")
 
             self.progress.emit(1)
             if self.is_cancelled:
@@ -682,24 +681,8 @@ class MainWindow(QMainWindow):
 if __name__ == '__main__':
     debug = False
 
-    # Special handling for macOS to change the menu bar app name
-    #if sys.platform == 'darwin':
-        # This is the crucial line that changes "Python" to "Video Thing" in the menu bar
-        # Must be set before creating the QApplication
-    #    os.environ['QT_MAC_APP_NAME'] = "Video Thing"
-
     # Initialize the application
     app = QApplication(sys.argv)
-
-    # Set all the app identification strings to "Video Thing"
-    #QCoreApplication.setApplicationName("Video Thing")
-    #QCoreApplication.setOrganizationName("Video Thing")
-    #app.setApplicationName("Video Thing")
-    #app.setOrganizationName("Video Thing")
-
-    # When bundling with py2app, add this to Info.plist:
-    # <key>CFBundleName</key>
-    # <string>Video Thing</string>
 
     window = MainWindow()
     window.show()
