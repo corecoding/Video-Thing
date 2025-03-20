@@ -121,6 +121,8 @@ class MergeWorker(QThread):
             output_audio
         ]
 
+        print(' '.join(cmd))
+
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         for line in process.stderr:
             if self.is_cancelled:
@@ -168,6 +170,8 @@ class MergeWorker(QThread):
             self.output_path
         ]
 
+        print(' '.join(cmd))
+
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         duration = self.get_video_duration(merged_audio)
 
@@ -200,6 +204,9 @@ class MergeWorker(QThread):
             "-of", "default=noprint_wrappers=1:nokey=1",
             video_path
         ]
+
+        print(' '.join(cmd))
+
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         try:
