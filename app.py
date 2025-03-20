@@ -121,7 +121,8 @@ class MergeWorker(QThread):
             output_audio
         ]
 
-        print(' '.join(cmd))
+        if debug:
+            print(' '.join(cmd))
 
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         for line in process.stderr:
@@ -170,7 +171,8 @@ class MergeWorker(QThread):
             self.output_path
         ]
 
-        print(' '.join(cmd))
+        if debug:
+            print(' '.join(cmd))
 
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         duration = self.get_video_duration(merged_audio)
@@ -180,10 +182,15 @@ class MergeWorker(QThread):
                 process.terminate()
                 return
 
-            print(line)
+            if debug:
+                print(line)
+
             if "time=" in line:
                 time = line.split("time=")[1].split()[0]
-                print(time)
+
+                if debug:
+                    print(time)
+
                 # Try to handle different time formats
                 time_parts = time.split(':')
                 if len(time_parts) == 3:
@@ -211,7 +218,8 @@ class MergeWorker(QThread):
             video_path
         ]
 
-        print(' '.join(cmd))
+        if debug:
+            print(' '.join(cmd))
 
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
@@ -658,6 +666,8 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"An error occurred: {message}")
 
 if __name__ == '__main__':
+    debug = False
+
     # Special handling for macOS to change the menu bar app name
     if sys.platform == 'darwin':
         # This is the crucial line that changes "Python" to "Video Thing" in the menu bar
