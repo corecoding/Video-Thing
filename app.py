@@ -19,14 +19,6 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QAction
 
-# Set application information before creating the QApplication
-QCoreApplication.setOrganizationName("YourCompanyName")
-QCoreApplication.setOrganizationDomain("yourcompany.com")
-QCoreApplication.setApplicationName("YourAppName")
-QCoreApplication.setOrganizationName("YourCompanyName")
-QCoreApplication.setOrganizationDomain("yourcompany.com")
-QCoreApplication.setApplicationName("YourAppName")
-
 class MergeWorker(QThread):
     progress = pyqtSignal(int)
     finished = pyqtSignal(bool, str)
@@ -669,19 +661,19 @@ if __name__ == '__main__':
     debug = False
 
     # Special handling for macOS to change the menu bar app name
-    if sys.platform == 'darwin':
+    #if sys.platform == 'darwin':
         # This is the crucial line that changes "Python" to "Video Thing" in the menu bar
         # Must be set before creating the QApplication
-        os.environ['QT_MAC_APP_NAME'] = "Video Thing"
+    #    os.environ['QT_MAC_APP_NAME'] = "Video Thing"
 
     # Initialize the application
     app = QApplication(sys.argv)
 
     # Set all the app identification strings to "Video Thing"
-    QCoreApplication.setApplicationName("Video Thing")
-    QCoreApplication.setOrganizationName("Video Thing")
-    app.setApplicationName("Video Thing")
-    app.setOrganizationName("Video Thing")
+    #QCoreApplication.setApplicationName("Video Thing")
+    #QCoreApplication.setOrganizationName("Video Thing")
+    #app.setApplicationName("Video Thing")
+    #app.setOrganizationName("Video Thing")
 
     # When bundling with py2app, add this to Info.plist:
     # <key>CFBundleName</key>
