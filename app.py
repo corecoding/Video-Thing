@@ -179,12 +179,18 @@ class MergeWorker(QThread):
             if self.is_cancelled:
                 process.terminate()
                 return
+
+            print(line)
             if "time=" in line:
                 time = line.split("time=")[1].split()[0]
-                hours, minutes, seconds = time.split(':')
-                current_time = int(hours) * 3600 + int(minutes) * 60 + float(seconds)
-                progress = int((current_time / duration) * 95) + 5  # Scale from 5% to 100%
-                self.progress.emit(progress)
+                print(time)
+                # Try to handle different time formats
+                time_parts = time.split(':')
+                if len(time_parts) == 3:
+                    hours, minutes, seconds = time_parts
+                    current_time = int(hours) * 3600 + int(minutes) * 60 + float(seconds)
+                    progress = int((current_time / duration) * 95) + 5
+                    self.progress.emit(progress)
 
         process.wait()
 
