@@ -29,9 +29,20 @@ class MergeWorker(QThread):
         self.audio_paths = audio_paths
         self.output_path = output_path
         self.is_cancelled = False
+        self.caffeinate_process = None
 
     def run(self):
         try:
+            # Start caffeinate to prevent sleep (macOS only)
+            if sys.platform == 'darwin':
+                self.caffeinate_process = subprocess.Popen(
+                    ['caffeinate', '-i', '-m', '-s', '-d'],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+                if debug:
+                    print("Started caffeinate process to prevent sleep")
+
             self.progress.emit(1)
             if self.is_cancelled:
                 return
@@ -55,6 +66,12 @@ class MergeWorker(QThread):
             # Cleanup
             if os.path.exists(merged_audio):
                 os.remove(merged_audio)
+
+            # Stop caffeinate process to allow system to sleep again
+            if self.caffeinate_process:
+                self.caffeinate_process.terminate()
+                if debug:
+                    print("Terminated caffeinate process")
 
     def get_binary_path(self, binary_name):
         """Find the path to a bundled binary (ffmpeg or ffprobe)."""
@@ -227,6 +244,11 @@ class MergeWorker(QThread):
 
     def cancel(self):
         self.is_cancelled = True
+        # Make sure to terminate caffeinate process when cancelling
+        if self.caffeinate_process:
+            self.caffeinate_process.terminate()
+            if debug:
+                print("Terminated caffeinate process due to cancellation")
 
 class FileDropZone(QWidget):
     def __init__(self, file_type):
