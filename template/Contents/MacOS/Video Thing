@@ -10,37 +10,27 @@ if [ ! -d "$RESOURCES_DIR" ]; then
     exit 1
 fi
 
+# Path to Python virtual environment
+VENV_DIR="$DIR/venv"
+
 # Check if this is the first run
 FIRST_RUN_FLAG="$DIR/.installed"
 if [ ! -f "$FIRST_RUN_FLAG" ]; then
-    # Create a temporary Python virtual environment for the right architecture
-    TEMP_ENV_DIR="$DIR/venv"
-
     # Remove any existing environment
-    if [ -d "$TEMP_ENV_DIR" ]; then
-        rm -rf "$TEMP_ENV_DIR"
+    if [ -d "$VENV_DIR" ]; then
+        rm -rf "$VENV_DIR"
     fi
 
     # Create a fresh environment
-    python3 -m venv "$TEMP_ENV_DIR"
+    python3 -m venv "$VENV_DIR"
 
     # Install required packages
-    "$TEMP_ENV_DIR/bin/pip" install --upgrade pip
-    "$TEMP_ENV_DIR/bin/pip" install PyQt6 setuptools
+    "$VENV_DIR/bin/pip" install --upgrade pip
+    "$VENV_DIR/bin/pip" install PyQt6 setuptools
 
     # Create flag file to indicate we've run the setup
     touch "$FIRST_RUN_FLAG"
 fi
 
-# Use the virtual environment if it exists
-if [ -d "$DIR/venv" ]; then
-    PYTHON_EXE="$DIR/venv/bin/python3"
-else
-    PYTHON_EXE="python3"
-fi
-
-echo "$PYTHON_EXE"
-
-# Run the app
-cd "$DIR"
-"$PYTHON_EXE" "$RESOURCES_DIR/app.py"
+# Run the app from the virtual environment
+cd "$DIR" && "$DIR/venv/bin/python3" "$RESOURCES_DIR/app.py"
