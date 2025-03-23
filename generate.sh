@@ -17,22 +17,13 @@ cat > "$MACOS_DIR/$APP_NAME" << 'EOF'
 #!/bin/bash
 
 # Get absolute path to the executable directory
-SELF_PATH=$(cd -P -- "$(dirname -- "$0")" && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
-DIR=$(dirname "$SELF_PATH")
+DIR=$(cd "$(dirname "$0")" && pwd)
 
-# Get absolute path to Resources
-RESOURCES_DIR="$DIR/../Resources"
-if [ -d "$RESOURCES_DIR" ]; then
-    RESOURCES_DIR=$(cd "$RESOURCES_DIR" 2>/dev/null && pwd)
-else
-    # Try a fallback approach
-    RESOURCES_DIR="$(dirname "$DIR")/Resources"
-    if [ -d "$RESOURCES_DIR" ]; then
-        RESOURCES_DIR=$(cd "$RESOURCES_DIR" 2>/dev/null && pwd)
-    else
-        echo "ERROR: Resources directory not found"
-        exit 1
-    fi
+# Get Resources directory
+RESOURCES_DIR="$(dirname "$DIR")/Resources"
+if [ ! -d "$RESOURCES_DIR" ]; then
+    echo "ERROR: Resources directory not found at $RESOURCES_DIR"
+    exit 1
 fi
 
 # Check if this is the first run
@@ -49,9 +40,8 @@ if [ ! -f "$FIRST_RUN_FLAG" ]; then
     # Create a fresh environment
     python3 -m venv "$TEMP_ENV_DIR"
 
-    "$TEMP_ENV_DIR/bin/pip" install --upgrade pip
-
     # Install required packages
+    "$TEMP_ENV_DIR/bin/pip" install --upgrade pip
     "$TEMP_ENV_DIR/bin/pip" install PyQt6 setuptools
 
     # Create flag file to indicate we've run the setup
@@ -65,7 +55,7 @@ else
     PYTHON_EXE="python3"
 fi
 
-#curl -H 'Pragma: no-cache' -z "$RESOURCES_DIR/app.py" -o "$RESOURCES_DIR/app.py" https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py
+echo "$PYTHON_EXE"
 
 # Run the app
 cd "$DIR"
