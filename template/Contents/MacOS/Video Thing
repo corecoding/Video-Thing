@@ -1,7 +1,9 @@
 #!/bin/bash
+
 # Get absolute path to the executable directory
 SELF_PATH=$(cd -P -- "$(dirname -- "$0")" && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
 DIR=$(dirname "$SELF_PATH")
+
 # Get absolute path to Resources
 RESOURCES_DIR="$DIR/../Resources"
 if [ -d "$RESOURCES_DIR" ]; then
@@ -16,6 +18,7 @@ else
         exit 1
     fi
 fi
+
 # Download ffmpeg if not present (for current architecture)
 if [ ! -f "$RESOURCES_DIR/ffmpeg" ]; then
   echo "Downloading ffmpeg..."
@@ -24,6 +27,7 @@ if [ ! -f "$RESOURCES_DIR/ffmpeg" ]; then
   rm "$RESOURCES_DIR/ffmpeg.zip"
   chmod +x "$RESOURCES_DIR/ffmpeg"
 fi
+
 # Download ffprobe if not present (for current architecture)
 if [ ! -f "$RESOURCES_DIR/ffprobe" ]; then
   echo "Downloading ffprobe..."
@@ -32,23 +36,30 @@ if [ ! -f "$RESOURCES_DIR/ffprobe" ]; then
   rm "/tmp/ffprobe.zip"
   chmod +x "$RESOURCES_DIR/ffprobe"
 fi
+
 # Check if this is the first run
 FIRST_RUN_FLAG="$DIR/.installed"
 if [ ! -f "$FIRST_RUN_FLAG" ]; then
     # Create a temporary Python virtual environment for the right architecture
     TEMP_ENV_DIR="$DIR/venv"
+
     # Remove any existing environment
     if [ -d "$TEMP_ENV_DIR" ]; then
         rm -rf "$TEMP_ENV_DIR"
     fi
+
     # Create a fresh environment
     python3 -m venv "$TEMP_ENV_DIR"
+
     "$TEMP_ENV_DIR/bin/pip" install --upgrade pip
+
     # Install required packages
-    "$TEMP_ENV_DIR/bin/pip" install PyQt6 setuptools pyobjc-core pyobjc-framework-Cocoa
+    "$TEMP_ENV_DIR/bin/pip" install PyQt6 setuptools
+
     # Create flag file to indicate we've run the setup
     touch "$FIRST_RUN_FLAG"
 fi
+
 # Use the virtual environment if it exists
 if [ -d "$DIR/venv" ]; then
     PYTHON_EXE="$DIR/venv/bin/python3"
@@ -56,36 +67,8 @@ else
     PYTHON_EXE="python3"
 fi
 
-# Export app bundle path as environment variable
-export VIDEO_THING_BUNDLE_PATH="$(dirname "$DIR")"
+#curl -H 'Pragma: no-cache' -z "$RESOURCES_DIR/app.py" -o "$RESOURCES_DIR/app.py" https://raw.githubusercontent.com/corecoding/Video-Thing/refs/heads/main/app.py
 
-# Use pythonw instead of python3 to properly maintain app identity 
-# and pass the app bundle path
-if [ -d "$DIR/venv" ]; then
-    # Since venv doesn't include pythonw, we use a custom approach
-    exec "$PYTHON_EXE" -c "
-import sys, os
-from Foundation import NSProcessInfo, NSBundle
-# Set the process name explicitly
-NSProcessInfo.processInfo().setProcessName_('Video Thing')
-# Run the actual app
-sys.path.insert(0, '$RESOURCES_DIR')
-exec(open('$RESOURCES_DIR/app.py').read())
-"
-else
-    # If no venv, try using system pythonw if available
-    if command -v pythonw &> /dev/null; then
-        exec pythonw -c "
-import sys, os  
-from Foundation import NSProcessInfo, NSBundle
-# Set the process name explicitly
-NSProcessInfo.processInfo().setProcessName_('Video Thing')
-# Run the actual app
-sys.path.insert(0, '$RESOURCES_DIR')
-exec(open('$RESOURCES_DIR/app.py').read())
-"
-    else
-        # Fallback to python3 if pythonw is not available
-        exec "$PYTHON_EXE" "$RESOURCES_DIR/app.py"
-    fi
-fi
+# Run the app
+cd "$DIR"
+"$PYTHON_EXE" "$RESOURCES_DIR/app.py"
