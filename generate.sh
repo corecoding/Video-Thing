@@ -35,24 +35,6 @@ else
     fi
 fi
 
-# Download ffmpeg if not present (for current architecture)
-if [ ! -f "$RESOURCES_DIR/ffmpeg" ]; then
-  echo "Downloading ffmpeg..."
-  curl -JL -o "$RESOURCES_DIR/ffmpeg.zip" https://evermeet.cx/ffmpeg/getrelease/zip
-  unzip "$RESOURCES_DIR/ffmpeg.zip" -d "$RESOURCES_DIR"
-  rm "$RESOURCES_DIR/ffmpeg.zip"
-  chmod +x "$RESOURCES_DIR/ffmpeg"
-fi
-
-# Download ffprobe if not present (for current architecture)
-if [ ! -f "$RESOURCES_DIR/ffprobe" ]; then
-  echo "Downloading ffprobe..."
-  curl -JL -o "/tmp/ffprobe.zip" https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip
-  unzip "/tmp/ffprobe.zip" -d "$RESOURCES_DIR"
-  rm "/tmp/ffprobe.zip"
-  chmod +x "$RESOURCES_DIR/ffprobe"
-fi
-
 # Check if this is the first run
 FIRST_RUN_FLAG="$DIR/.installed"
 if [ ! -f "$FIRST_RUN_FLAG" ]; then
