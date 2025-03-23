@@ -38,10 +38,6 @@ jobs:
       run: |
         echo "CONTENTS_DIR=$APP_DIR/Contents" >> $GITHUB_ENV
 
-    - name: Prepare MACOS_DIR
-      run: |
-        echo "MACOS_DIR=$CONTENTS_DIR/MacOS" >> $GITHUB_ENV
-
     - name: Assemble app bundle
       run: |
         # Clean previous builds
@@ -52,13 +48,12 @@ jobs:
 
         # Create app directory structure
         echo "Creating app bundle structure..."
-        mkdir -p "$MACOS_DIR" "$CONTENTS_DIR/Frameworks"
-
-        RESOURCES_DIR="$CONTENTS_DIR/Resources/"
+        mkdir -p "$CONTENTS_DIR/Frameworks"
 
         # Copy app resources
         echo "Copying application resources..."
-        cp "$SCRIPT_NAME" "$CONTENTS_DIR/Resources/"
+        RESOURCES_DIR="$CONTENTS_DIR/Resources/"
+        cp "$SCRIPT_NAME" "$RESOURCES_DIR"
 
         # Download ffmpeg if not present (for current architecture)
         if [ ! -f "$RESOURCES_DIR/ffmpeg" ]; then
@@ -114,10 +109,6 @@ jobs:
     - name: Install create-dmg
       run: |
         brew install create-dmg
-
-    #- name: Create DMG file
-    #  run: |
-    #    hdiutil create -volname "$APP_NAME" -srcfolder "$APP_DIR" -ov -format UDZO "dist/$APP_NAME.dmg"
 
     - name: Create DMG file
       run: |
