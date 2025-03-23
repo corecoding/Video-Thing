@@ -40,7 +40,7 @@ if [ ! -d "$VENV_DIR" ]; then
 fi
 
 # Run the app from the virtual environment
-cd "$DIR" && "$DIR/venv/bin/python3" "$RESOURCES_DIR/app.py"
+cd "$DIR" && "$VENV_DIR/bin/python3" "$RESOURCES_DIR/app.py"
 EOF
 
 chmod +x "$MACOS_DIR/$APP_NAME"
