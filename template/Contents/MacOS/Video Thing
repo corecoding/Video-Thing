@@ -13,23 +13,14 @@ fi
 # Path to Python virtual environment
 VENV_DIR="$DIR/venv"
 
-# Check if this is the first run
-FIRST_RUN_FLAG="$DIR/.installed"
-if [ ! -f "$FIRST_RUN_FLAG" ]; then
-    # Remove any existing environment
-    if [ -d "$VENV_DIR" ]; then
-        rm -rf "$VENV_DIR"
-    fi
-
+# Check if the virtual environment exists
+if [ ! -d "$VENV_DIR" ]; then
     # Create a fresh environment
     python3 -m venv "$VENV_DIR"
 
     # Install required packages
     "$VENV_DIR/bin/pip" install --upgrade pip
     "$VENV_DIR/bin/pip" install PyQt6 setuptools
-
-    # Create flag file to indicate we've run the setup
-    touch "$FIRST_RUN_FLAG"
 fi
 
 # Run the app from the virtual environment
